@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════ */
+/* CHUYA — Global Styles                  */
+/* ═══════════════════════════════════════ */
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: #F8F5F0;
+    color: #1A1A1A;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+  }
+
+  input, textarea, select {
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+
+  ::selection {
+    background-color: #C9B99A;
+    color: #1A1A1A;
+  }
+}
+
+@layer components {
+  /* All storefront buttons have border-radius: 0 */
+  .btn {
+    @apply inline-flex items-center justify-center px-8 py-3 font-sans text-sm font-medium tracking-wider uppercase transition-all duration-300 ease-in-out;
+    border-radius: 0 !important;
+    letter-spacing: 0.1em;
+  }
+
+  .btn-primary {
+    @apply bg-chuya text-cream hover:bg-chuya/90;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-chuya border border-chuya hover:bg-chuya hover:text-cream;
+  }
+
+  .btn-accent {
+    @apply bg-taupe text-chuya hover:bg-taupe/80;
+  }
+
+  .btn-disabled {
+    @apply bg-muted/30 text-muted cursor-not-allowed;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 bg-white border border-chuya/10 text-chuya font-sans text-sm transition-all duration-200;
+    border-radius: 0;
+  }
+
+  .input:focus {
+    @apply border-chuya/40 ring-1 ring-chuya/10;
+  }
+
+  .input-error {
+    @apply border-red-400 ring-1 ring-red-100;
+  }
+
+  /* Product card */
+  .product-card {
+    @apply relative overflow-hidden;
+  }
+
+  .product-card-image {
+    @apply w-full object-cover transition-transform duration-700 ease-out;
+    aspect-ratio: 3 / 4;
+  }
+
+  .product-card:hover .product-card-image {
+    @apply scale-105;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    background: linear-gradient(90deg, #F8F5F0 25%, rgba(201,185,154,0.1) 50%, #F8F5F0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase;
+    border-radius: 0;
+  }
+
+  .badge-success {
+    @apply bg-green-50 text-green-700;
+  }
+
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700;
+  }
+
+  .badge-error {
+    @apply bg-red-50 text-red-700;
+  }
+
+  .badge-info {
+    @apply bg-blue-50 text-blue-700;
+  }
+
+  /* Divider */
+  .divider {
+    @apply w-full h-px bg-chuya/10;
+  }
+
+  /* Section spacing */
+  .section {
+    @apply py-16 md:py-24 px-6 md:px-12 lg:px-20;
+  }
+
+  /* Section title */
+  .section-title {
+    @apply font-serif text-3xl md:text-4xl lg:text-5xl text-center mb-4;
+  }
+
+  .section-subtitle {
+    @apply text-muted text-sm md:text-base text-center max-w-2xl mx-auto mb-12;
+  }
+
+  /* Overlay */
+  .overlay {
+    @apply absolute inset-0 bg-black/30;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Swiper overrides */
+.swiper-pagination-bullet {
+  background: #C9B99A !important;
+  opacity: 0.5 !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 0 !important;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1 !important;
+  background: #1A1A1A !important;
+  width: 24px !important;
+}
+
+/* Page transition */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  padding: 16px 24px;
+  background: #1A1A1A;
+  color: #F8F5F0;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  animation: slide-up 0.3s ease-out;
+  border-radius: 0;
+}
