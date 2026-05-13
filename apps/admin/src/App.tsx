@@ -7,8 +7,9 @@ import ProductsPage from './pages/ProductsPage'
 import CategoriesPage from './pages/CategoriesPage'
 import BannersPage from './pages/BannersPage'
 import OrdersPage from './pages/OrdersPage'
+import LoginPage from './pages/LoginPage'
 
-type AuthState = 'loading' | 'authorized' | 'unauthorized'
+type AuthState = 'loading' | 'authorized' | 'unauthorized' | 'unauthenticated'
 
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>('loading')
@@ -17,7 +18,7 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session) { setAuthState('unauthorized'); return }
+        if (!session) { setAuthState('unauthenticated'); return }
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -31,7 +32,7 @@ export default function App() {
           setAuthState('unauthorized')
         }
       } catch {
-        setAuthState('unauthorized')
+        setAuthState('unauthenticated')
       }
     }
     checkAuth()
@@ -51,6 +52,17 @@ export default function App() {
     )
   }
 
+  // Handle users who are not logged in at all
+  if (authState === 'unauthenticated') {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
+  }
+
+  // Handle users who are logged in but don't have the owner role
   if (authState === 'unauthorized') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -63,7 +75,7 @@ export default function App() {
           </p>
           <button
             onClick={() => supabase.auth.signOut().then(() => window.location.reload())}
-            className="admin-btn admin-btn-primary"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-chuya hover:bg-chuya/90 transition-colors"
           >
             Sign Out & Try Again
           </button>
@@ -72,6 +84,7 @@ export default function App() {
     )
   }
 
+  // Authorized users
   return (
     <Routes>
       <Route element={<AdminLayout />}>
