@@ -7,11 +7,11 @@ export const CURRENCY_SYMBOL = '₹'
 export const BRAND = {
   name: 'CHUYA',
   tagline: 'Luxury Handcrafted Indian Handbags',
-  description: 'CHUYA is a luxury Indian handbag brand that celebrates the art of Indian craftsmanship. Each piece is meticulously handcrafted using the finest materials, blending traditional techniques with contemporary design.',
-  email: 'hello@chuya.in',
-  phone: '+91 98765 43210',
-  instagram: 'https://instagram.com/chuya.in',
-  whatsapp: 'https://wa.me/919876543210',
+  description: 'Crafted in 2025, Chuya was born out of a passion for premium accessories. From stunning evening clutches to high-end handbags, our focus is on delivering unique masterpieces that set you apart. Discover the world of Chuya—where every stitch tells a story of luxury.',
+  email: 'chuya.co.in@gmail.com',
+  address: 'Chuya, Station road dalauda 458667 Indore, M.P., India',
+  instagram: 'https://www.instagram.com/chuya_pj?igsh=MTBtMnpsc2Q1Njczaw==',
+  whatsapp: '919876543210', // Replace with actual WhatsApp number (country code + number, no +)
 } as const
 
 export const COLORS = {

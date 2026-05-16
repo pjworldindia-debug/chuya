@@ -99,9 +99,14 @@ export default function OrderSuccessPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-8">
-            <a href={`https://wa.me/${BRAND.whatsapp.replace('https://wa.me/', '')}?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer" className="flex-1">
+            <a
+              href={`https://wa.me/${BRAND.whatsapp}?text=${whatsappMessage}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1"
+            >
               <Button variant="accent" fullWidth>
-                <MessageCircle size={16} className="mr-2" /> Share on WhatsApp
+                <MessageCircle size={16} className="mr-2" /> Chat on WhatsApp
               </Button>
             </a>
             <Link to="/shop" className="flex-1">

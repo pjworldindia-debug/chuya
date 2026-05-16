@@ -24,7 +24,7 @@ export default function App() {
           .from('profiles')
           .select('role')
           .eq('id', session.user.id)
-          .single()
+          .single<{ role: string }>()
 
         if (profile?.role === 'owner') {
           setAuthState('authorized')

@@ -51,9 +51,10 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            className="font-serif text-2xl md:text-3xl tracking-[0.15em] font-medium"
+            className="flex items-center gap-2 font-serif text-2xl md:text-3xl tracking-[0.15em] font-medium"
             id="nav-logo"
           >
+            <img src="/logo.png" alt="CHUYA Logo" className="h-8 md:h-10 w-auto" />
             CHUYA
           </Link>
 

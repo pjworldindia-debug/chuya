@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Instagram, Mail, Phone, ArrowRight } from 'lucide-react'
+import { Instagram, Mail, MapPin, ArrowRight } from 'lucide-react'
 import { supabase } from '@chuya/shared/supabase'
 import { BRAND } from '@chuya/shared/constants'
 
@@ -19,7 +19,7 @@ export default function Footer() {
     try {
       const { error } = await supabase
         .from('subscribers')
-        .insert({ email: email.trim().toLowerCase() })
+        .insert([{ email: email.trim().toLowerCase() }] as { email: string }[])
 
       if (error) {
         if (error.code === '23505') {
@@ -95,7 +95,7 @@ export default function Footer() {
               CHUYA
             </Link>
             <p className="text-cream/50 text-sm leading-relaxed">
-              {BRAND.description.slice(0, 120)}...
+              {BRAND.description}
             </p>
           </div>
 
@@ -119,14 +119,19 @@ export default function Footer() {
           <div>
             <h4 className="text-xs tracking-[0.2em] uppercase text-cream/40 mb-6">Support</h4>
             <div className="flex flex-col gap-3">
-              <Link to="/cart" className="text-sm text-cream/70 hover:text-cream transition-colors">
-                Shipping & Returns
-              </Link>
               <Link to="/auth" className="text-sm text-cream/70 hover:text-cream transition-colors">
                 My Account
               </Link>
               <a href={`mailto:${BRAND.email}`} className="text-sm text-cream/70 hover:text-cream transition-colors">
                 Contact Us
+              </a>
+              <a
+                href="https://drive.google.com/file/d/1HjbFlz7eDmhyvSC4l3AW1jFIjbiNieny/view?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-cream/70 hover:text-cream transition-colors"
+              >
+                Terms &amp; Conditions
               </a>
             </div>
           </div>
@@ -149,12 +154,10 @@ export default function Footer() {
               >
                 <Mail size={16} /> {BRAND.email}
               </a>
-              <a
-                href={`tel:${BRAND.phone}`}
-                className="flex items-center gap-2 text-sm text-cream/70 hover:text-cream transition-colors"
-              >
-                <Phone size={16} /> {BRAND.phone}
-              </a>
+              <div className="flex items-start gap-2 text-sm text-cream/70 mt-2">
+                <MapPin size={16} className="flex-shrink-0 mt-0.5" />
+                <span>{BRAND.address}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -168,7 +171,14 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <span className="text-cream/30 text-xs">Privacy Policy</span>
-            <span className="text-cream/30 text-xs">Terms of Service</span>
+            <a
+              href="https://drive.google.com/file/d/1HjbFlz7eDmhyvSC4l3AW1jFIjbiNieny/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cream/30 text-xs hover:text-cream/60 transition-colors"
+            >
+              Terms &amp; Conditions
+            </a>
           </div>
         </div>
       </div>
