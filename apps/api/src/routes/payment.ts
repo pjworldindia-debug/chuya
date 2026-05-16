@@ -199,7 +199,6 @@ router.post('/callback', async (req: Request, res: Response) => {
               .eq('id', productId)
             console.log(`Stock updated: ${productId} → ${product.stock} → ${newStock}`)
           }
-          }
         }
       }
     }
