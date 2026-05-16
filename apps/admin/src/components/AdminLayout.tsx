@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, Grid3X3, Image, ShoppingCart, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, Grid3X3, Image, ShoppingCart, Ticket, LogOut } from 'lucide-react'
 import { supabase } from '@chuya/shared/supabase'
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { icon: Grid3X3, label: 'Categories', path: '/categories' },
   { icon: Image, label: 'Banners', path: '/banners' },
   { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+  { icon: Ticket, label: 'Coupons', path: '/coupons' },
 ]
 
 export default function AdminLayout() {

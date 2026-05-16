@@ -11,7 +11,7 @@ export const BRAND = {
   email: 'chuya.co.in@gmail.com',
   address: 'Chuya, Station road dalauda 458667 Indore, M.P., India',
   instagram: 'https://www.instagram.com/chuya_pj?igsh=MTBtMnpsc2Q1Njczaw==',
-  whatsapp: '919876543210', // Replace with actual WhatsApp number (country code + number, no +)
+  whatsapp: '918889008998',
 } as const
 
 export const COLORS = {

@@ -7,6 +7,7 @@ import ProductsPage from './pages/ProductsPage'
 import CategoriesPage from './pages/CategoriesPage'
 import BannersPage from './pages/BannersPage'
 import OrdersPage from './pages/OrdersPage'
+import CouponsPage from './pages/CouponsPage'
 import LoginPage from './pages/LoginPage'
 
 type AuthState = 'loading' | 'authorized' | 'unauthorized' | 'unauthenticated'
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/banners" element={<BannersPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/coupons" element={<CouponsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
