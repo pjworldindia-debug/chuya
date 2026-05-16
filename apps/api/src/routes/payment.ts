@@ -179,25 +179,26 @@ router.post('/callback', async (req: Request, res: Response) => {
         .single()
 
       if (orderData && Array.isArray(orderData.items)) {
-        for (const item of orderData.items as { id: string; quantity: number }[]) {
-          const { error: stockErr } = await supabaseAdmin.rpc('decrement_stock', {
-            product_id: item.id,
-            qty: item.quantity,
-          })
-          if (stockErr) {
-            console.error(`Stock decrement failed for ${item.id}:`, stockErr)
-            // Fallback: manual update
-            const { data: product } = await supabaseAdmin
+        for (const item of orderData.items as { productId: string; quantity: number }[]) {
+          const productId = item.productId
+          if (!productId) {
+            console.error('Missing productId in order item:', item)
+            continue
+          }
+          // Direct update (no RPC needed)
+          const { data: product } = await supabaseAdmin
+            .from('products')
+            .select('stock')
+            .eq('id', productId)
+            .single()
+          if (product) {
+            const newStock = Math.max(0, product.stock - item.quantity)
+            await supabaseAdmin
               .from('products')
-              .select('stock')
-              .eq('id', item.id)
-              .single()
-            if (product) {
-              await supabaseAdmin
-                .from('products')
-                .update({ stock: Math.max(0, product.stock - item.quantity) })
-                .eq('id', item.id)
-            }
+              .update({ stock: newStock })
+              .eq('id', productId)
+            console.log(`Stock updated: ${productId} → ${product.stock} → ${newStock}`)
+          }
           }
         }
       }
