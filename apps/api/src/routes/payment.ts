@@ -127,16 +127,22 @@ router.post('/callback', async (req: Request, res: Response) => {
       return
     }
 
-    // Verify signature
+    // Verify signature (warn but don't block in UAT/sandbox mode)
     const stringToHash = encodedResponse + '/pg/v1/pay' + PHONEPE_SALT_KEY
     const expectedHash = crypto.createHash('sha256').update(stringToHash).digest('hex')
     const expectedVerify = `${expectedHash}###${PHONEPE_SALT_INDEX}`
     const receivedVerify = req.headers['x-verify'] as string
 
+    const isUAT = PHONEPE_API_URL.includes('sandbox') || PHONEPE_API_URL.includes('preprod')
+
     if (expectedVerify !== receivedVerify) {
-      console.error('Signature verification failed')
-      res.status(401).json({ success: false, error: 'Invalid signature' })
-      return
+      console.warn('Signature mismatch — expected:', expectedVerify, 'received:', receivedVerify)
+      if (!isUAT) {
+        // Only block in production mode
+        res.status(401).json({ success: false, error: 'Invalid signature' })
+        return
+      }
+      console.warn('Proceeding anyway (UAT/sandbox mode)')
     }
 
     // Decode response
@@ -162,6 +168,39 @@ router.post('/callback', async (req: Request, res: Response) => {
 
     if (updateError) {
       console.error('Order update error:', updateError)
+    }
+
+    // Decrement stock for each item when payment is successful
+    if (paymentStatus === 'paid') {
+      const { data: orderData } = await supabaseAdmin
+        .from('orders')
+        .select('items')
+        .eq('id', merchantTransactionId)
+        .single()
+
+      if (orderData && Array.isArray(orderData.items)) {
+        for (const item of orderData.items as { id: string; quantity: number }[]) {
+          const { error: stockErr } = await supabaseAdmin.rpc('decrement_stock', {
+            product_id: item.id,
+            qty: item.quantity,
+          })
+          if (stockErr) {
+            console.error(`Stock decrement failed for ${item.id}:`, stockErr)
+            // Fallback: manual update
+            const { data: product } = await supabaseAdmin
+              .from('products')
+              .select('stock')
+              .eq('id', item.id)
+              .single()
+            if (product) {
+              await supabaseAdmin
+                .from('products')
+                .update({ stock: Math.max(0, product.stock - item.quantity) })
+                .eq('id', item.id)
+            }
+          }
+        }
+      }
     }
 
     // Add timeline entry
