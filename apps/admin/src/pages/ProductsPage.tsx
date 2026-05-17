@@ -308,7 +308,7 @@ export default function ProductsPage() {
               <button type="submit" className="admin-btn admin-btn-primary w-full justify-center" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? 'Saving...' : editingProduct ? 'Update Product' : 'Create Product'}
               </button>
-              {saveMutation.isError && <p className="text-red-500 text-sm">Failed to save. Please try again.</p>}
+              {saveMutation.isError && <p className="text-red-500 text-sm">Failed to save: {saveMutation.error instanceof Error ? saveMutation.error.message : 'Unknown error'}</p>}
             </form>
           </div>
         </div>
