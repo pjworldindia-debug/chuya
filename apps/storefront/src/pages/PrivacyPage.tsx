@@ -41,6 +41,10 @@ export default function PrivacyPage() {
         <p>This privacy policy may be updated periodically. Continued use of the website after changes indicates acceptance of the revised policy.</p>
         
         <p className="mt-8 font-medium">Contact - <a href="mailto:chuya.co.in@gmail.com" className="underline underline-offset-4 hover:text-chuya transition-colors">chuya.co.in@gmail.com</a></p>
+        <p className="mt-2 font-medium">
+          Phone : 8889008998<br />
+          CHUYA. By PJ World
+        </p>
       </div>
     </div>
   )

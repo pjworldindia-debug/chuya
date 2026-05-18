@@ -27,6 +27,10 @@ export default function ReturnsPage() {
           <li>The business is not responsible for delays due to courier services or unforeseen circumstances.</li>
         </ul>
         <p className="mt-4">Contact - <a href="mailto:chuya.co.in@gmail.com" className="underline underline-offset-4 hover:text-chuya transition-colors">chuya.co.in@gmail.com</a></p>
+        <p className="mt-2">
+          Phone : 8889008998<br />
+          CHUYA. By PJ World
+        </p>
       </div>
     </div>
   )
