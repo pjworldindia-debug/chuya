@@ -125,14 +125,15 @@ export default function Footer() {
               <a href={`mailto:${BRAND.email}`} className="text-sm text-cream/70 hover:text-cream transition-colors">
                 Contact Us
               </a>
-              <a
-                href="https://drive.google.com/file/d/1HjbFlz7eDmhyvSC4l3AW1jFIjbiNieny/view?usp=sharing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-cream/70 hover:text-cream transition-colors"
-              >
+              <Link to="/terms" className="text-sm text-cream/70 hover:text-cream transition-colors">
                 Terms &amp; Conditions
-              </a>
+              </Link>
+              <Link to="/privacy" className="text-sm text-cream/70 hover:text-cream transition-colors">
+                Privacy Policy
+              </Link>
+              <Link to="/returns" className="text-sm text-cream/70 hover:text-cream transition-colors">
+                Return &amp; Refund Policy
+              </Link>
             </div>
           </div>
 
@@ -170,15 +171,15 @@ export default function Footer() {
             © {new Date().getFullYear()} CHUYA. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <span className="text-cream/30 text-xs">Privacy Policy</span>
-            <a
-              href="https://drive.google.com/file/d/1HjbFlz7eDmhyvSC4l3AW1jFIjbiNieny/view?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-cream/30 text-xs hover:text-cream/60 transition-colors"
-            >
+            <Link to="/privacy" className="text-cream/30 text-xs hover:text-cream/60 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="text-cream/30 text-xs hover:text-cream/60 transition-colors">
               Terms &amp; Conditions
-            </a>
+            </Link>
+            <Link to="/returns" className="text-cream/30 text-xs hover:text-cream/60 transition-colors">
+              Return &amp; Refund Policy
+            </Link>
           </div>
         </div>
       </div>

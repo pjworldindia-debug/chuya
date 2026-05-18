@@ -325,7 +325,7 @@ export default function ProductPage() {
                 {
                   id: 'shipping',
                   title: 'Shipping & Returns',
-                  content: 'Free standard shipping on all orders. Estimated delivery: 5-7 business days. 15-day return policy for unused items in original packaging.',
+                  content: 'Delivery time ,\nStandard 5–10 business days.\nExpress 3-5 business days.',
                 },
               ].map((item) => (
                 <div key={item.id} className="border-b border-chuya/10">

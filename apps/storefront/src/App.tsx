@@ -8,6 +8,9 @@ import CartPage from './pages/CartPage'
 import AuthPage from './pages/AuthPage'
 import AccountPage from './pages/AccountPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
+import TermsPage from './pages/TermsPage'
+import PrivacyPage from './pages/PrivacyPage'
+import ReturnsPage from './pages/ReturnsPage'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from '@chuya/shared/supabase'
 
@@ -76,6 +79,9 @@ export default function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/returns" element={<ReturnsPage />} />
       </Route>
     </Routes>
   )
