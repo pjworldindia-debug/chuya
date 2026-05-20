@@ -10,10 +10,10 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || ''
-const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY || ''
-const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1'
-const PHONEPE_API_URL = process.env.PHONEPE_API_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox'
+const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || '').trim()
+const PHONEPE_SALT_KEY = (process.env.PHONEPE_SALT_KEY || '').trim()
+const PHONEPE_SALT_INDEX = (process.env.PHONEPE_SALT_INDEX || '1').trim()
+const PHONEPE_API_URL = (process.env.PHONEPE_API_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox').trim()
 
 /**
  * POST /api/payment/initiate
