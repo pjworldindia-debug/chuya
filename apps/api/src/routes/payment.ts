@@ -10,14 +10,52 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+// PhonePe V2 Credentials
 const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || '').trim()
-const PHONEPE_SALT_KEY = (process.env.PHONEPE_SALT_KEY || '').trim()
-const PHONEPE_SALT_INDEX = (process.env.PHONEPE_SALT_INDEX || '1').trim()
-const PHONEPE_API_URL = (process.env.PHONEPE_API_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox').trim()
+const PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || '').trim()
+const PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || '').trim()
+const PHONEPE_ENV = (process.env.PHONEPE_ENV || 'production').trim()
+
+const IS_PROD = PHONEPE_ENV === 'production'
+
+const URLS = {
+  token: IS_PROD 
+    ? 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token' 
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token',
+  checkout: IS_PROD 
+    ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay' 
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay',
+  status: IS_PROD 
+    ? 'https://api.phonepe.com/apis/pg/v3/transaction' 
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/v3/transaction'
+}
+
+/**
+ * Get PhonePe OAuth Token (V2)
+ */
+async function getPhonePeToken() {
+  const params = new URLSearchParams()
+  params.append('client_id', PHONEPE_CLIENT_ID)
+  params.append('client_secret', PHONEPE_CLIENT_SECRET)
+  params.append('client_version', '1')
+  params.append('grant_type', 'client_credentials')
+
+  const res = await fetch(URLS.token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params
+  })
+  
+  const data = await res.json()
+  if (!res.ok || !data.access_token) {
+    throw new Error('OAuth failed: ' + JSON.stringify(data))
+  }
+  return data.access_token
+}
 
 /**
  * POST /api/payment/initiate
- * Creates a PhonePe payment and returns the redirect URL
+ * Creates a PhonePe payment (V2) and returns the redirect URL
  */
 router.post('/initiate', async (req: Request, res: Response) => {
   try {
@@ -58,55 +96,47 @@ router.post('/initiate', async (req: Request, res: Response) => {
     // Increment coupon used_count if applicable
     if (couponCode) {
       await supabaseAdmin.rpc('increment_coupon_used', { coupon_code: couponCode }).catch(() => {
-        // Non-critical, log and continue
         console.warn('Failed to increment coupon usage')
       })
     }
 
-    // PhonePe payment payload
-    const merchantTransactionId = orderId
+    // Get Auth Token
+    const accessToken = await getPhonePeToken()
     const amountInPaise = Math.round(amount * 100)
 
     const payload = {
-      merchantId: PHONEPE_MERCHANT_ID,
-      merchantTransactionId,
-      merchantUserId: userId || 'guest',
+      merchantOrderId: orderId,
       amount: amountInPaise,
-      redirectUrl: `${redirectUrl}/${orderId}`,
-      redirectMode: 'REDIRECT',
-      callbackUrl,
-      mobileNumber: customerPhone || '',
-      paymentInstrument: { type: 'PAY_PAGE' },
+      paymentFlow: {
+        type: 'PG_CHECKOUT',
+        message: `Order ${orderId.slice(0, 8)}`,
+        merchantUrls: {
+          redirectUrl: `${redirectUrl}/${orderId}`, // User goes here after payment
+          callbackUrl: callbackUrl // Server-to-server webhook (optional in V2 if we use status check)
+        }
+      }
     }
 
-    const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64')
-    const stringToHash = base64Payload + '/pg/v1/pay' + PHONEPE_SALT_KEY
-    const sha256Hash = crypto.createHash('sha256').update(stringToHash).digest('hex')
-    const xVerify = `${sha256Hash}###${PHONEPE_SALT_INDEX}`
-
-    const targetUrl = `${PHONEPE_API_URL}/pg/v1/pay`
-    console.log('--- PHONEPE DEBUG ---')
-    console.log('Base URL configured:', PHONEPE_API_URL)
-    console.log('Target URL attempted:', targetUrl)
+    console.log('--- PHONEPE V2 INITIATE ---')
     console.log('Payload:', payload)
 
-    const phonePeResponse = await fetch(targetUrl, {
+    const response = await fetch(URLS.checkout, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-VERIFY': xVerify,
+        'Authorization': `O-Bearer ${accessToken}`
       },
-      body: JSON.stringify({ request: base64Payload }),
+      body: JSON.stringify(payload)
     })
+    
+    const phonePeData = await response.json()
+    console.log('PhonePe Response:', phonePeData)
 
-    const phonePeData = await phonePeResponse.json()
-    console.log('PhonePe Raw Response:', phonePeData)
-
-    if (phonePeData.success && phonePeData.data?.instrumentResponse?.redirectInfo?.url) {
+    if (phonePeData.redirectUrl) {
       res.json({
         success: true,
-        paymentUrl: phonePeData.data.instrumentResponse.redirectInfo.url,
-        transactionId: merchantTransactionId,
+        paymentUrl: phonePeData.redirectUrl,
+        transactionId: orderId, // V2 maps orderId directly
       })
     } else {
       console.error('PhonePe error:', phonePeData)
@@ -122,118 +152,94 @@ router.post('/initiate', async (req: Request, res: Response) => {
 })
 
 /**
- * POST /api/payment/callback
- * PhonePe webhook — verifies signature and updates order status
+ * GET /api/payment/status/:orderId
+ * Safely checks PhonePe V2 status and updates the database
  */
-router.post('/callback', async (req: Request, res: Response) => {
+router.get('/status/:orderId', async (req: Request, res: Response) => {
   try {
-    const { response: encodedResponse } = req.body
+    const { orderId } = req.params
 
-    if (!encodedResponse) {
-      res.status(400).json({ success: false })
+    if (!orderId) {
+      res.status(400).json({ success: false, error: 'Order ID required' })
       return
     }
 
-    // Verify signature (warn but don't block in UAT/sandbox mode)
-    const stringToHash = encodedResponse + '/pg/v1/pay' + PHONEPE_SALT_KEY
-    const expectedHash = crypto.createHash('sha256').update(stringToHash).digest('hex')
-    const expectedVerify = `${expectedHash}###${PHONEPE_SALT_INDEX}`
-    const receivedVerify = req.headers['x-verify'] as string
+    const accessToken = await getPhonePeToken()
+    
+    // Status endpoint: /apis/pg/v3/transaction/{merchantId}/{merchantOrderId}/status
+    const statusUrl = `${URLS.status}/${PHONEPE_MERCHANT_ID}/${orderId}/status`
 
-    const isUAT = PHONEPE_API_URL.includes('sandbox') || PHONEPE_API_URL.includes('preprod')
-
-    if (expectedVerify !== receivedVerify) {
-      console.warn('Signature mismatch — expected:', expectedVerify, 'received:', receivedVerify)
-      if (!isUAT) {
-        // Only block in production mode
-        res.status(401).json({ success: false, error: 'Invalid signature' })
-        return
+    const response = await fetch(statusUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `O-Bearer ${accessToken}`
       }
-      console.warn('Proceeding anyway (UAT/sandbox mode)')
-    }
+    })
 
-    // Decode response
-    const decodedResponse = JSON.parse(Buffer.from(encodedResponse, 'base64').toString('utf-8'))
-    const { merchantTransactionId, state, transactionId } = decodedResponse.data || {}
+    const phonePeData = await response.json()
+    
+    if (phonePeData.state) {
+      const paymentStatus = phonePeData.state === 'COMPLETED' ? 'paid' : phonePeData.state === 'FAILED' ? 'failed' : 'pending'
 
-    if (!merchantTransactionId) {
-      res.status(400).json({ success: false })
-      return
-    }
-
-    const paymentStatus = state === 'COMPLETED' ? 'paid' : state === 'FAILED' ? 'failed' : 'pending'
-
-    // Update order
-    const { error: updateError } = await supabaseAdmin
-      .from('orders')
-      .update({
-        payment_status: paymentStatus,
-        phonepe_transaction_id: transactionId || null,
-        fulfilment_status: paymentStatus === 'paid' ? 'confirmed' : 'placed',
-      })
-      .eq('id', merchantTransactionId)
-
-    if (updateError) {
-      console.error('Order update error:', updateError)
-    }
-
-    // Decrement stock for each item when payment is successful
-    if (paymentStatus === 'paid') {
-      const { data: orderData } = await supabaseAdmin
+      // Check current status before updating to avoid duplicate decrements
+      const { data: currentOrder } = await supabaseAdmin
         .from('orders')
-        .select('items')
-        .eq('id', merchantTransactionId)
+        .select('payment_status, items, timeline')
+        .eq('id', orderId)
         .single()
 
-      if (orderData && Array.isArray(orderData.items)) {
-        for (const item of orderData.items as { productId: string; quantity: number }[]) {
-          const productId = item.productId
-          if (!productId) {
-            console.error('Missing productId in order item:', item)
-            continue
-          }
-          // Direct update (no RPC needed)
-          const { data: product } = await supabaseAdmin
-            .from('products')
-            .select('stock')
-            .eq('id', productId)
-            .single()
-          if (product) {
-            const newStock = Math.max(0, product.stock - item.quantity)
-            await supabaseAdmin
-              .from('products')
-              .update({ stock: newStock })
-              .eq('id', productId)
-            console.log(`Stock updated: ${productId} → ${product.stock} → ${newStock}`)
+      if (currentOrder && currentOrder.payment_status !== paymentStatus) {
+        // Update order
+        const { error: updateError } = await supabaseAdmin
+          .from('orders')
+          .update({
+            payment_status: paymentStatus,
+            fulfilment_status: paymentStatus === 'paid' ? 'confirmed' : 'placed',
+          })
+          .eq('id', orderId)
+
+        if (updateError) {
+          console.error('Order update error:', updateError)
+        }
+
+        // Decrement stock if newly paid
+        if (paymentStatus === 'paid' && currentOrder.payment_status !== 'paid') {
+          if (Array.isArray(currentOrder.items)) {
+            for (const item of currentOrder.items as { productId: string; quantity: number }[]) {
+              const productId = item.productId
+              if (!productId) continue
+              
+              const { data: product } = await supabaseAdmin
+                .from('products')
+                .select('stock')
+                .eq('id', productId)
+                .single()
+                
+              if (product) {
+                const newStock = Math.max(0, product.stock - item.quantity)
+                await supabaseAdmin.from('products').update({ stock: newStock }).eq('id', productId)
+              }
+            }
           }
         }
+
+        // Add timeline entry
+        const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : []
+        timeline.push({
+          status: paymentStatus === 'paid' ? 'confirmed' : paymentStatus,
+          timestamp: new Date().toISOString(),
+          note: paymentStatus === 'paid' ? 'Payment confirmed' : `Payment ${paymentStatus}`,
+        })
+        await supabaseAdmin.from('orders').update({ timeline }).eq('id', orderId)
       }
+
+      res.json({ success: true, status: paymentStatus })
+    } else {
+      res.status(400).json({ success: false, error: 'Could not fetch status' })
     }
-
-    // Add timeline entry
-    const { data: order } = await supabaseAdmin
-      .from('orders')
-      .select('timeline')
-      .eq('id', merchantTransactionId)
-      .single()
-
-    if (order) {
-      const timeline = Array.isArray(order.timeline) ? order.timeline : []
-      timeline.push({
-        status: paymentStatus === 'paid' ? 'confirmed' : paymentStatus,
-        timestamp: new Date().toISOString(),
-        note: paymentStatus === 'paid' ? 'Payment confirmed' : `Payment ${paymentStatus}`,
-      })
-      await supabaseAdmin
-        .from('orders')
-        .update({ timeline })
-        .eq('id', merchantTransactionId)
-    }
-
-    res.json({ success: true })
   } catch (error) {
-    console.error('Payment callback error:', error)
-    res.status(500).json({ success: false })
+    console.error('Status check error:', error)
+    res.status(500).json({ success: false, error: 'Internal server error' })
   }
 })
 

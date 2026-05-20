@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
@@ -9,6 +10,14 @@ import Button from '../components/Button'
 
 export default function OrderSuccessPage() {
   const { orderId } = useParams<{ orderId: string }>()
+
+  // Ping API to check and verify PhonePe status
+  useEffect(() => {
+    if (orderId) {
+      const apiUrl = import.meta.env.VITE_API_URL || ''
+      fetch(`${apiUrl}/api/payment/status/${orderId}`).catch(console.error)
+    }
+  }, [orderId])
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order', orderId],
