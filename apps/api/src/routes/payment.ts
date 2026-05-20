@@ -84,7 +84,13 @@ router.post('/initiate', async (req: Request, res: Response) => {
     const sha256Hash = crypto.createHash('sha256').update(stringToHash).digest('hex')
     const xVerify = `${sha256Hash}###${PHONEPE_SALT_INDEX}`
 
-    const phonePeResponse = await fetch(`${PHONEPE_API_URL}/pg/v1/pay`, {
+    const targetUrl = `${PHONEPE_API_URL}/pg/v1/pay`
+    console.log('--- PHONEPE DEBUG ---')
+    console.log('Base URL configured:', PHONEPE_API_URL)
+    console.log('Target URL attempted:', targetUrl)
+    console.log('Payload:', payload)
+
+    const phonePeResponse = await fetch(targetUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,6 +100,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
     })
 
     const phonePeData = await phonePeResponse.json()
+    console.log('PhonePe Raw Response:', phonePeData)
 
     if (phonePeData.success && phonePeData.data?.instrumentResponse?.redirectInfo?.url) {
       res.json({
