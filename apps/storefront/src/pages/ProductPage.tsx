@@ -57,6 +57,22 @@ export default function ProductPage() {
     enabled: !!product?.category_id,
   })
 
+  // Manually linked similar products
+  const { data: similarProducts } = useQuery({
+    queryKey: ['products', 'similar', product?.id, product?.related_product_slugs],
+    queryFn: async () => {
+      const slugs = product!.related_product_slugs!
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active')
+        .in('slug', slugs)
+      if (error) throw error
+      return data as Product[]
+    },
+    enabled: !!product?.related_product_slugs && product.related_product_slugs.length > 0,
+  })
+
   // Check wishlist status
   useQuery({
     queryKey: ['wishlist', 'check', product?.id, user?.id],
@@ -355,6 +371,71 @@ export default function ProductPage() {
               ))}
             </div>
           </div>
+
+          {/* Similar Products (manually linked) */}
+          {similarProducts && similarProducts.length > 0 && (
+            <div className="mt-24" id="similar-products">
+              <h2 className="section-title">Similar Products</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+                {similarProducts.map((p) => {
+                  const img = p.images?.[0] || ''
+                  const hoverImg = p.images?.[1]
+                  const hasDiscountSP = p.compare_at_price && p.compare_at_price > p.price
+                  return (
+                    <Link
+                      key={p.id}
+                      to={`/product/${p.slug}`}
+                      className="group block"
+                      id={`similar-product-${p.slug}`}
+                    >
+                      <div className="relative overflow-hidden aspect-[4/5]">
+                        <img
+                          src={img}
+                          alt={p.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        {hoverImg && (
+                          <img
+                            src={hoverImg}
+                            alt={`${p.name} - alternate`}
+                            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            loading="lazy"
+                          />
+                        )}
+                        {p.stock === 0 && (
+                          <div className="absolute inset-0 bg-cream/60 flex items-center justify-center">
+                            <span className="badge bg-chuya text-cream text-xs tracking-wider">Out of Stock</span>
+                          </div>
+                        )}
+                        {p.is_new_arrival && (
+                          <span className="absolute top-3 left-3 badge bg-chuya text-cream">New</span>
+                        )}
+                        {hasDiscountSP && (
+                          <span className="absolute top-3 right-3 badge bg-taupe text-chuya">
+                            {Math.round(((p.compare_at_price! - p.price) / p.compare_at_price!) * 100)}% Off
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-4 px-1">
+                        <h3 className="font-serif text-xl leading-tight group-hover:text-taupe transition-colors">
+                          {p.name}
+                        </h3>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-base font-medium">{formatCurrency(p.price)}</span>
+                          {hasDiscountSP && (
+                            <span className="text-sm text-muted line-through">
+                              {formatCurrency(p.compare_at_price!)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Related Products */}
           {relatedProducts && relatedProducts.length > 0 && (

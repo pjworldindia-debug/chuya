@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Search, Pencil, Trash2, X } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, X, Link } from 'lucide-react'
 import { supabase } from '@chuya/shared/supabase'
 import { productSchema, type ProductFormData } from '@chuya/shared/schemas'
 import { formatCurrency, slugify } from '@chuya/shared/constants'
@@ -16,6 +16,8 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [uploading, setUploading] = useState(false)
   const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [relatedSlugs, setRelatedSlugs] = useState<string[]>([])
+  const [relatedUrlInput, setRelatedUrlInput] = useState('')
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin', 'products'],
@@ -43,6 +45,8 @@ export default function ProductsPage() {
     setEditingProduct(null)
     form.reset({ status: 'draft', stock: 0, is_featured: false, is_new_arrival: false })
     setImageUrls([])
+    setRelatedSlugs([])
+    setRelatedUrlInput('')
     setSheetOpen(true)
   }
 
@@ -68,12 +72,36 @@ export default function ProductsPage() {
       seo_description: product.seo_description,
     })
     setImageUrls(product.images || [])
+    setRelatedSlugs(product.related_product_slugs || [])
+    setRelatedUrlInput('')
     setSheetOpen(true)
+  }
+
+  const extractSlugFromUrl = (input: string): string => {
+    const trimmed = input.trim()
+    try {
+      const url = new URL(trimmed)
+      const parts = url.pathname.split('/').filter(Boolean)
+      const productIdx = parts.indexOf('product')
+      if (productIdx !== -1 && parts[productIdx + 1]) return parts[productIdx + 1]
+      return parts[parts.length - 1] || trimmed
+    } catch {
+      return trimmed.replace(/^\/+|\/+$/g, '').split('/').pop() || trimmed
+    }
+  }
+
+  const handleAddRelatedProduct = () => {
+    if (!relatedUrlInput.trim()) return
+    const slug = extractSlugFromUrl(relatedUrlInput)
+    if (slug && !relatedSlugs.includes(slug)) {
+      setRelatedSlugs((prev) => [...prev, slug])
+    }
+    setRelatedUrlInput('')
   }
 
   const saveMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const payload = { ...data, images: imageUrls }
+      const payload = { ...data, images: imageUrls, related_product_slugs: relatedSlugs.length > 0 ? relatedSlugs : null }
       if (editingProduct) {
         const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id)
         if (error) throw error
@@ -292,6 +320,45 @@ export default function ProductsPage() {
                     <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                   </label>
                 </div>
+              </div>
+
+              {/* Related Products */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1.5">
+                  <Link size={13} /> Related Products (Similar Products)
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5 mb-2">Paste product URLs or slugs to show as "Similar Products" on the storefront.</p>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={relatedUrlInput}
+                    onChange={(e) => setRelatedUrlInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddRelatedProduct() } }}
+                    placeholder="https://chuya.in/product/product-slug or slug"
+                    className="admin-input flex-1"
+                    id="related-product-input"
+                  />
+                  <button type="button" onClick={handleAddRelatedProduct} className="admin-btn admin-btn-primary px-3 py-1.5 text-xs flex-shrink-0">
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
+                {relatedSlugs.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    {relatedSlugs.map((slug, i) => (
+                      <div key={i} className="flex items-center gap-2 bg-gray-50 rounded px-3 py-1.5 text-sm">
+                        <Link size={12} className="text-gray-400 flex-shrink-0" />
+                        <span className="flex-1 font-mono text-xs truncate">{slug}</span>
+                        <button
+                          type="button"
+                          onClick={() => setRelatedSlugs((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="text-red-400 hover:text-red-600 flex-shrink-0"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* SEO */}

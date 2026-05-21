@@ -30,6 +30,7 @@ export type Database = {
           care_instructions: string | null
           seo_title: string | null
           seo_description: string | null
+          related_product_slugs: string[] | null
           created_at: string
           updated_at: string
         }
@@ -53,6 +54,7 @@ export type Database = {
           care_instructions?: string | null
           seo_title?: string | null
           seo_description?: string | null
+          related_product_slugs?: string[] | null
           created_at?: string
           updated_at?: string
         }
@@ -76,6 +78,7 @@ export type Database = {
           care_instructions?: string | null
           seo_title?: string | null
           seo_description?: string | null
+          related_product_slugs?: string[] | null
           created_at?: string
           updated_at?: string
         }

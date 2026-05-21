@@ -20,6 +20,7 @@ export const productSchema = z.object({
   care_instructions: z.string().nullable().optional().transform(v => v === '' ? null : v),
   seo_title: z.string().max(70).nullable().optional().transform(v => v === '' ? null : v),
   seo_description: z.string().max(160).nullable().optional().transform(v => v === '' ? null : v),
+  related_product_slugs: z.array(z.string()).nullable().optional(),
 })
 
 export type ProductFormData = z.infer<typeof productSchema>
