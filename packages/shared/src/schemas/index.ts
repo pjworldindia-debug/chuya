@@ -21,6 +21,10 @@ export const productSchema = z.object({
   seo_title: z.string().max(70).nullable().optional().transform(v => v === '' ? null : v),
   seo_description: z.string().max(160).nullable().optional().transform(v => v === '' ? null : v),
   related_product_slugs: z.array(z.string()).nullable().optional(),
+  color_variants: z.array(z.object({
+    name: z.string().min(1, 'Color name is required'),
+    url: z.string().min(1, 'Product URL is required')
+  })).nullable().optional(),
 })
 
 export type ProductFormData = z.infer<typeof productSchema>

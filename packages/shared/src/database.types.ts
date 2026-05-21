@@ -31,6 +31,7 @@ export type Database = {
           seo_title: string | null
           seo_description: string | null
           related_product_slugs: string[] | null
+          color_variants: Json | null
           created_at: string
           updated_at: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           seo_title?: string | null
           seo_description?: string | null
           related_product_slugs?: string[] | null
+          color_variants?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -79,6 +81,7 @@ export type Database = {
           seo_title?: string | null
           seo_description?: string | null
           related_product_slugs?: string[] | null
+          color_variants?: Json | null
           created_at?: string
           updated_at?: string
         }

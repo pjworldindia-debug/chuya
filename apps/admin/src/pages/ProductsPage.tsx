@@ -7,7 +7,7 @@ import { supabase } from '@chuya/shared/supabase'
 import { productSchema, type ProductFormData } from '@chuya/shared/schemas'
 import { formatCurrency, slugify } from '@chuya/shared/constants'
 import { uploadImage, deleteImage } from '@chuya/shared/storage'
-import type { Product, Category } from '@chuya/shared/types'
+import type { Product, Category, ColorVariant } from '@chuya/shared/types'
 
 export default function ProductsPage() {
   const queryClient = useQueryClient()
@@ -18,6 +18,9 @@ export default function ProductsPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [relatedSlugs, setRelatedSlugs] = useState<string[]>([])
   const [relatedUrlInput, setRelatedUrlInput] = useState('')
+  const [colorVariants, setColorVariants] = useState<ColorVariant[]>([])
+  const [colorNameInput, setColorNameInput] = useState('')
+  const [colorUrlInput, setColorUrlInput] = useState('')
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin', 'products'],
@@ -47,6 +50,9 @@ export default function ProductsPage() {
     setImageUrls([])
     setRelatedSlugs([])
     setRelatedUrlInput('')
+    setColorVariants([])
+    setColorNameInput('')
+    setColorUrlInput('')
     setSheetOpen(true)
   }
 
@@ -74,6 +80,9 @@ export default function ProductsPage() {
     setImageUrls(product.images || [])
     setRelatedSlugs(product.related_product_slugs || [])
     setRelatedUrlInput('')
+    setColorVariants((product.color_variants as ColorVariant[]) || [])
+    setColorNameInput('')
+    setColorUrlInput('')
     setSheetOpen(true)
   }
 
@@ -99,9 +108,21 @@ export default function ProductsPage() {
     setRelatedUrlInput('')
   }
 
+  const handleAddColorVariant = () => {
+    if (!colorNameInput.trim() || !colorUrlInput.trim()) return
+    setColorVariants((prev) => [...prev, { name: colorNameInput.trim(), url: colorUrlInput.trim() }])
+    setColorNameInput('')
+    setColorUrlInput('')
+  }
+
   const saveMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const payload = { ...data, images: imageUrls, related_product_slugs: relatedSlugs.length > 0 ? relatedSlugs : null }
+      const payload = { 
+        ...data, 
+        images: imageUrls, 
+        related_product_slugs: relatedSlugs.length > 0 ? relatedSlugs : null,
+        color_variants: colorVariants.length > 0 ? colorVariants : null
+      }
       if (editingProduct) {
         const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id)
         if (error) throw error
@@ -351,6 +372,51 @@ export default function ProductsPage() {
                         <button
                           type="button"
                           onClick={() => setRelatedSlugs((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="text-red-400 hover:text-red-600 flex-shrink-0"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Color Variants */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase">Color Variants</label>
+                <p className="text-xs text-gray-400 mt-0.5 mb-2">Add color buttons that redirect to other product pages.</p>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={colorNameInput}
+                    onChange={(e) => setColorNameInput(e.target.value)}
+                    placeholder="Color Name (e.g. Red)"
+                    className="admin-input flex-1"
+                  />
+                  <input
+                    type="text"
+                    value={colorUrlInput}
+                    onChange={(e) => setColorUrlInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddColorVariant() } }}
+                    placeholder="URL (e.g. /product/red-bag)"
+                    className="admin-input flex-1"
+                  />
+                  <button type="button" onClick={handleAddColorVariant} className="admin-btn admin-btn-primary px-3 py-1.5 text-xs flex-shrink-0">
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
+                {colorVariants.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    {colorVariants.map((variant, i) => (
+                      <div key={i} className="flex items-center justify-between bg-gray-50 rounded px-3 py-1.5 text-sm">
+                        <div>
+                          <span className="font-medium mr-2">{variant.name}</span>
+                          <span className="text-gray-500 text-xs">{variant.url}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setColorVariants((prev) => prev.filter((_, idx) => idx !== i))}
                           className="text-red-400 hover:text-red-600 flex-shrink-0"
                         >
                           <X size={14} />

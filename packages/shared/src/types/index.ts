@@ -35,6 +35,12 @@ export type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 
 export type Subscriber = Database['public']['Tables']['subscribers']['Row']
 
+// ── Color Variants ──
+export interface ColorVariant {
+  name: string
+  url: string
+}
+
 // ── Cart types (Zustand) ──
 export interface CartItemLocal {
   productId: string

@@ -9,7 +9,7 @@ import 'swiper/css'
 import 'swiper/css/thumbs'
 import 'swiper/css/free-mode'
 import { supabase } from '@chuya/shared/supabase'
-import type { Product } from '@chuya/shared/types'
+import type { Product, ColorVariant } from '@chuya/shared/types'
 import { formatCurrency, BRAND } from '@chuya/shared/constants'
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
@@ -256,6 +256,28 @@ export default function ProductPage() {
               </div>
 
               <p className="text-muted leading-relaxed">{product.description}</p>
+
+              {/* Color Variants */}
+              {product.color_variants && (product.color_variants as ColorVariant[]).length > 0 && (
+                <div className="pt-2">
+                  <h3 className="text-sm font-medium uppercase tracking-wider mb-3">Available Colors</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(product.color_variants as ColorVariant[]).map((variant, i) => {
+                      const isExternal = variant.url.startsWith('http')
+                      const btnClass = "px-4 py-2 border border-chuya/20 hover:border-chuya rounded-md text-sm transition-colors"
+                      return isExternal ? (
+                        <a key={i} href={variant.url} target="_blank" rel="noopener noreferrer" className={btnClass}>
+                          {variant.name}
+                        </a>
+                      ) : (
+                        <Link key={i} to={variant.url} className={btnClass}>
+                          {variant.name}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="h-px bg-chuya/10" />
 
