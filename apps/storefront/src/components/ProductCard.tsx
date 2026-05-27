@@ -10,8 +10,9 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const primaryImage = product.images?.[0] || '/placeholder-product.jpg'
-  const secondaryImage = product.images?.[1]
+  const images = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? [product.images] : [])
+  const primaryImage = images[0] || '/placeholder-product.jpg'
+  const secondaryImage = images[1]
   const isOutOfStock = product.stock === 0
   const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
   
@@ -28,7 +29,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       slug: product.slug,
       price: product.price,
       compareAtPrice: product.compare_at_price,
-      image: product.images?.[0] || '',
+      image: images[0] || '',
       quantity: 1,
       stock: product.stock,
     })

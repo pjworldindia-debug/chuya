@@ -167,7 +167,9 @@ export default function Navbar() {
                     <div className="p-4 text-center text-sm text-muted">Searching...</div>
                   ) : searchResults.length > 0 ? (
                     <div className="flex flex-col">
-                      {searchResults.map((product) => (
+                      {searchResults.map((product) => {
+                        const images = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? [product.images] : [])
+                        return (
                         <Link
                           key={product.id}
                           to={`/product/${product.slug}`}
@@ -178,7 +180,7 @@ export default function Navbar() {
                           className="flex items-center gap-4 p-3 hover:bg-chuya/5 transition-colors border-b border-chuya/5 last:border-0"
                         >
                           <img 
-                            src={product.images?.[0] || '/placeholder-product.jpg'} 
+                            src={images[0] || '/placeholder-product.jpg'} 
                             alt={product.name} 
                             className="w-10 h-12 object-cover" 
                           />
@@ -187,7 +189,8 @@ export default function Navbar() {
                             <p className="text-xs text-muted">₹{product.price.toLocaleString('en-IN')}</p>
                           </div>
                         </Link>
-                      ))}
+                        )
+                      })}
                       <Link 
                         to={`/shop?search=${encodeURIComponent(searchQuery.trim())}`}
                         onClick={() => {

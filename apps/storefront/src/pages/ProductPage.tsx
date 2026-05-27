@@ -153,7 +153,7 @@ export default function ProductPage() {
     )
   }
 
-  const images = product.images || []
+  const images = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? [product.images] : [])
   const isOutOfStock = product.stock === 0
   const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
 
