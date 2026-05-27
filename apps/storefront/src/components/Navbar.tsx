@@ -171,6 +171,10 @@ export default function Navbar() {
                         <Link
                           key={product.id}
                           to={`/product/${product.slug}`}
+                          onClick={() => {
+                            setSearchOpen(false)
+                            setSearchQuery('')
+                          }}
                           className="flex items-center gap-4 p-3 hover:bg-chuya/5 transition-colors border-b border-chuya/5 last:border-0"
                         >
                           <img 
@@ -186,6 +190,10 @@ export default function Navbar() {
                       ))}
                       <Link 
                         to={`/shop?search=${encodeURIComponent(searchQuery.trim())}`}
+                        onClick={() => {
+                          setSearchOpen(false)
+                          setSearchQuery('')
+                        }}
                         className="p-3 text-center text-xs tracking-wider uppercase text-chuya hover:bg-chuya/5 transition-colors bg-chuya/5"
                       >
                         View all results
