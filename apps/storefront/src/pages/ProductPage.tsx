@@ -74,7 +74,7 @@ export default function ProductPage() {
       if (error) throw error
       return data as Product[]
     },
-    enabled: !!product?.related_product_slugs && product.related_product_slugs.length > 0,
+    enabled: Array.isArray(product?.related_product_slugs) && product.related_product_slugs.length > 0,
   })
 
   // Wishlist status is handled by wishlistStore
@@ -243,11 +243,12 @@ export default function ProductPage() {
               <p className="text-muted leading-relaxed">{product.description}</p>
 
               {/* Color Variants */}
-              {product.color_variants && (product.color_variants as ColorVariant[]).length > 0 && (
+              {Array.isArray(product.color_variants) && product.color_variants.length > 0 && (
                 <div className="pt-2">
                   <h3 className="text-sm font-medium uppercase tracking-wider mb-3">Available Colors</h3>
                   <div className="flex flex-wrap gap-2">
-                    {(product.color_variants as ColorVariant[]).map((variant, i) => {
+                    {(product.color_variants as unknown as ColorVariant[]).map((variant, i) => {
+                      if (!variant || typeof variant !== 'object' || !variant.name || !variant.url) return null;
                       const isExternal = variant.url.startsWith('http')
                       const btnClass = "px-4 py-2 border border-chuya/20 hover:border-chuya rounded-md text-sm transition-colors"
                       return isExternal ? (
