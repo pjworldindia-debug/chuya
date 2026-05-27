@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useCartStore } from '../stores/cartStore'
 import { formatCurrency, formatDate } from '@chuya/shared/constants'
 import type { Order, Address, Product } from '@chuya/shared/types'
+import { useWishlistStore } from '../stores/wishlistStore'
 import Button from '../components/Button'
 import ProductCard from '../components/ProductCard'
 
@@ -19,6 +20,7 @@ export default function AccountPage() {
   const loading = useAuthStore((s) => s.loading)
   const setUser = useAuthStore((s) => s.setUser)
   const clearCart = useCartStore((s) => s.clearCart)
+  const wishlistedItems = useWishlistStore((s) => s.items)
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('orders')
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
@@ -48,13 +50,17 @@ export default function AccountPage() {
   })
 
   const { data: wishlistProducts } = useQuery({
-    queryKey: ['wishlist', user?.id],
+    queryKey: ['wishlist', wishlistedItems],
     queryFn: async () => {
-      const { data, error } = await supabase.from('wishlist_items').select('product_id, products(*)').eq('user_id', user!.id)
+      if (wishlistedItems.length === 0) return []
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', wishlistedItems)
       if (error) throw error
-      return data.map((w) => w.products as unknown as Product).filter(Boolean)
+      return data as Product[]
     },
-    enabled: !!user,
+    enabled: wishlistedItems.length > 0,
   })
 
   const deleteAddress = useMutation({
@@ -162,7 +168,7 @@ export default function AccountPage() {
               {!wishlistProducts?.length ? (
                 <div className="text-center py-16"><p className="text-muted mb-4">Wishlist empty</p><Link to="/shop"><Button variant="ghost">Browse</Button></Link></div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                   {wishlistProducts.map((p) => <ProductCard key={p.id} product={p}/>)}
                 </div>
               )}

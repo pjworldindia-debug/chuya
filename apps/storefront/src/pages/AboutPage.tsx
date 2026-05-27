@@ -78,7 +78,7 @@ export default function AboutPage() {
 
             <div className="mt-16 text-center">
               <img 
-                src="/about-image.jpg" 
+                src="/about-image.jpeg" 
                 alt="Chuya Inspiration" 
                 className="w-full max-w-[500px] mx-auto mb-8 shadow-lg"
               />

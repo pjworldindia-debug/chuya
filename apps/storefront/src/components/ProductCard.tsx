@@ -22,7 +22,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    addToCart(product.id, 1)
+    addToCart({
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      compareAtPrice: product.compare_at_price,
+      image: product.images?.[0] || '',
+      quantity: 1,
+      stock: product.stock,
+    })
   }
 
   const handleWishlistClick = (e: React.MouseEvent) => {
@@ -102,16 +111,14 @@ export default function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* Info */}
-      <div className="mt-4 px-1">
+      <div className="mt-3 md:mt-4 text-center">
         <Link to={`/product/${product.slug}`}>
-          <h3 className="font-serif text-lg leading-tight hover:text-taupe transition-colors">
-            {product.name}
-          </h3>
+          <h3 className="font-serif text-sm md:text-base mb-1 truncate">{product.name}</h3>
         </Link>
-        <div className="mt-1.5 flex items-center gap-2">
-          <span className="text-sm font-medium">{formatCurrency(product.price)}</span>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-xs md:text-sm">{formatCurrency(product.price)}</span>
           {hasDiscount && (
-            <span className="text-sm text-muted line-through">
+            <span className="text-[10px] md:text-xs text-muted line-through">
               {formatCurrency(product.compare_at_price!)}
             </span>
           )}

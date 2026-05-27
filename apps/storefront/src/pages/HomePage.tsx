@@ -223,7 +223,7 @@ export default function HomePage() {
               Over {totalProducts} Products Available
             </p>
           )}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 max-w-[1400px] mx-auto">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
@@ -284,7 +284,7 @@ export default function HomePage() {
           <p className="section-subtitle">
             The latest additions to our collection — fresh from the atelier.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 max-w-[1400px] mx-auto">
             {newArrivals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

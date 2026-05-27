@@ -17,7 +17,8 @@ export default function Footer() {
     setErrorMsg('')
 
     try {
-      const response = await fetch('/api/email/newsletter', {
+      const apiUrl = import.meta.env.VITE_API_URL || ''
+      const response = await fetch(`${apiUrl}/api/email/newsletter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
@@ -122,9 +123,6 @@ export default function Footer() {
               <Link to="/auth" className="text-sm text-cream/70 hover:text-cream transition-colors">
                 My Account
               </Link>
-              <a href={`mailto:${BRAND.email}`} className="text-sm text-cream/70 hover:text-cream transition-colors">
-                Contact Us
-              </a>
               <Link to="/terms" className="text-sm text-cream/70 hover:text-cream transition-colors">
                 Terms &amp; Conditions
               </Link>

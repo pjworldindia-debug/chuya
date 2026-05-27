@@ -95,6 +95,26 @@ export default function ShopPage() {
     initialPageParam: 0,
   })
 
+  // Total products count for current filters
+  const { data: totalProductsCount } = useQuery({
+    queryKey: ['products', 'count', category, minPrice, maxPrice, search],
+    queryFn: async () => {
+      let query = supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+
+      if (category) query = query.eq('category_id', category)
+      if (minPrice) query = query.gte('price', parseFloat(minPrice))
+      if (maxPrice) query = query.lte('price', parseFloat(maxPrice))
+      if (search) query = query.ilike('name', `%${search}%`)
+
+      const { count, error } = await query
+      if (error) throw error
+      return count || 0
+    },
+  })
+
   const products = useMemo(
     () => data?.pages.flatMap((page) => page.products) || [],
     [data]
@@ -148,7 +168,11 @@ export default function ShopPage() {
                 : 'The Collection'}
             </h1>
             <p className="text-muted text-sm">
-              {products.length} {products.length === 1 ? 'product' : 'products'}
+              {totalProductsCount !== undefined ? (
+                `${totalProductsCount} ${totalProductsCount === 1 ? 'product' : 'products'}`
+              ) : (
+                `${products.length} ${products.length === 1 ? 'product' : 'products'}`
+              )}
             </p>
           </div>
 
@@ -326,7 +350,7 @@ export default function ShopPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                     {products.map((product) => (
                       <ProductCard key={product.id} product={product} />
                     ))}
