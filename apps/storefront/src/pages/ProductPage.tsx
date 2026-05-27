@@ -77,22 +77,7 @@ export default function ProductPage() {
     enabled: !!product?.related_product_slugs && product.related_product_slugs.length > 0,
   })
 
-  // Check wishlist status
-  useQuery({
-    queryKey: ['wishlist', 'check', product?.id, user?.id],
-    queryFn: async () => {
-      if (!user || !product) return false
-      const { data } = await supabase
-        .from('wishlist_items')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('product_id', product.id)
-        .maybeSingle()
-      setWishlisted(!!data)
-      return !!data
-    },
-    enabled: !!user && !!product,
-  })
+  // Wishlist status is handled by wishlistStore
 
   const handleAddToCart = async () => {
     if (!product || product.stock === 0) return
@@ -107,17 +92,7 @@ export default function ProductPage() {
       stock: product.stock,
     })
 
-    if (user) {
-      try {
-        await supabase.from('cart_items').upsert({
-          user_id: user.id,
-          product_id: product.id,
-          quantity,
-        })
-      } catch (err) {
-        console.error('Failed to sync cart:', err)
-      }
-    }
+
 
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
@@ -139,15 +114,6 @@ export default function ProductPage() {
     })
 
     if (user) {
-      try {
-        await supabase.from('cart_items').upsert({
-          user_id: user.id,
-          product_id: product.id,
-          quantity,
-        })
-      } catch (err) {
-        console.error('Failed to sync cart:', err)
-      }
       navigate('/cart')
     } else {
       navigate('/auth', { state: { from: '/cart' } })
