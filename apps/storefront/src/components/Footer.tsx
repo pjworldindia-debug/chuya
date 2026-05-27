@@ -17,19 +17,18 @@ export default function Footer() {
     setErrorMsg('')
 
     try {
-      const { error } = await supabase
-        .from('subscribers')
-        .insert([{ email: email.trim().toLowerCase() }] as { email: string }[])
-
-      if (error) {
-        if (error.code === '23505') {
-          setStatus('success') // Already subscribed, still show success
-        } else {
-          throw error
-        }
-      } else {
-        setStatus('success')
+      const response = await fetch('/api/email/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      })
+      const data = await response.json()
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to subscribe')
       }
+
+      setStatus('success')
       setEmail('')
     } catch (err) {
       setStatus('error')
@@ -91,7 +90,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link to="/" className="font-serif text-2xl tracking-[0.15em] mb-4 block">
+            <Link to="/" className="flex items-center gap-2 font-serif text-2xl tracking-[0.15em] mb-4">
+              <img src="/logo.png" alt="CHUYA Logo" className="h-8 w-auto" />
               CHUYA
             </Link>
             <p className="text-cream/50 text-sm leading-relaxed">

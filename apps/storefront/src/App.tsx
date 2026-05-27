@@ -1,16 +1,19 @@
 import { Routes, Route } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import Layout from './components/Layout'
-import HomePage from './pages/HomePage'
-import ShopPage from './pages/ShopPage'
-import ProductPage from './pages/ProductPage'
-import CartPage from './pages/CartPage'
-import AuthPage from './pages/AuthPage'
-import AccountPage from './pages/AccountPage'
-import OrderSuccessPage from './pages/OrderSuccessPage'
-import TermsPage from './pages/TermsPage'
-import PrivacyPage from './pages/PrivacyPage'
-import ReturnsPage from './pages/ReturnsPage'
+import ScrollToTop from './components/ScrollToTop'
+
+const HomePage = lazy(() => import('./pages/HomePage'))
+const ShopPage = lazy(() => import('./pages/ShopPage'))
+const ProductPage = lazy(() => import('./pages/ProductPage'))
+const CartPage = lazy(() => import('./pages/CartPage'))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
+const AccountPage = lazy(() => import('./pages/AccountPage'))
+const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage'))
+const TermsPage = lazy(() => import('./pages/TermsPage'))
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+const ReturnsPage = lazy(() => import('./pages/ReturnsPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
 import { useAuthStore } from './stores/authStore'
 import { supabase } from '@chuya/shared/supabase'
 
@@ -70,19 +73,25 @@ export default function App() {
   }, [setUser, setLoading])
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/product/:slug" element={<ProductPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/returns" element={<ReturnsPage />} />
-      </Route>
-    </Routes>
+    <>
+      <ScrollToTop />
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-pulse font-serif text-2xl tracking-[0.15em]">CHUYA</div></div>}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:slug" element={<ProductPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/returns" element={<ReturnsPage />} />
+            <Route path="/about" element={<AboutPage />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </>
   )
 }

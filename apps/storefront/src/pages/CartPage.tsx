@@ -89,7 +89,7 @@ export default function CartPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: crypto.randomUUID(),
+          orderId: crypto.randomUUID().replace(/-/g, ''),
           amount: total,
           items: items.map((item) => ({
             productId: item.productId,

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -13,6 +13,7 @@ import type { Product, ColorVariant } from '@chuya/shared/types'
 import { formatCurrency, BRAND } from '@chuya/shared/constants'
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
+import { useWishlistStore } from '../stores/wishlistStore'
 import Button from '../components/Button'
 import ProductCard from '../components/ProductCard'
 import { Heart, Minus, Plus, ChevronDown, Truck, RotateCcw, Shield } from 'lucide-react'
@@ -23,9 +24,12 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1)
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details')
   const [addedToCart, setAddedToCart] = useState(false)
-  const [wishlisted, setWishlisted] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
   const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const toggleWishlist = useWishlistStore((s) => s.toggleItem)
+  const isWishlisted = useWishlistStore((s) => product ? s.hasItem(product.id) : false)
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
@@ -119,25 +123,40 @@ export default function ProductPage() {
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
-  const handleWishlistToggle = async () => {
-    if (!user || !product) return
-    try {
-      if (wishlisted) {
-        await supabase
-          .from('wishlist_items')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('product_id', product.id)
-        setWishlisted(false)
-      } else {
-        await supabase
-          .from('wishlist_items')
-          .insert({ user_id: user.id, product_id: product.id })
-        setWishlisted(true)
+  const handleBuyNow = async () => {
+    if (!product) return
+    if (isOutOfStock) return
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      compareAtPrice: product.compare_at_price,
+      image: product.images?.[0] || '',
+      quantity,
+      stock: product.stock,
+    })
+
+    if (user) {
+      try {
+        await supabase.from('cart_items').upsert({
+          user_id: user.id,
+          product_id: product.id,
+          quantity,
+        })
+      } catch (err) {
+        console.error('Failed to sync cart:', err)
       }
-    } catch (err) {
-      console.error('Wishlist error:', err)
+      navigate('/cart')
+    } else {
+      navigate('/auth', { state: { from: '/cart' } })
     }
+  }
+
+  const handleWishlistToggle = () => {
+    if (!product) return
+    toggleWishlist(product.id)
   }
 
   const toggleAccordion = (id: string) => {
@@ -307,24 +326,37 @@ export default function ProductPage() {
                   )}
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    <Button
+                      variant="ghost"
+                      fullWidth
+                      onClick={handleAddToCart}
+                      disabled={isOutOfStock}
+                      id="add-to-cart"
+                      className="border-chuya"
+                    >
+                      {isOutOfStock ? 'Out of Stock' : addedToCart ? '✓ Added to Bag' : 'Add to Bag'}
+                    </Button>
+                    <button
+                      onClick={handleWishlistToggle}
+                      className="p-3 border border-chuya/20 hover:border-chuya/40 transition-colors flex-shrink-0"
+                      aria-label="Add to wishlist"
+                      id="wishlist-toggle"
+                    >
+                      <Heart size={20} className={isWishlisted ? 'fill-chuya text-chuya' : ''} />
+                    </button>
+                  </div>
+                  
                   <Button
                     variant="primary"
                     fullWidth
-                    onClick={handleAddToCart}
+                    onClick={handleBuyNow}
                     disabled={isOutOfStock}
-                    id="add-to-cart"
+                    id="buy-now"
                   >
-                    {isOutOfStock ? 'Out of Stock' : addedToCart ? '✓ Added to Bag' : 'Add to Bag'}
+                    Buy Now
                   </Button>
-                  <button
-                    onClick={handleWishlistToggle}
-                    className="p-3 border border-chuya/20 hover:border-chuya/40 transition-colors flex-shrink-0"
-                    aria-label="Add to wishlist"
-                    id="wishlist-toggle"
-                  >
-                    <Heart size={20} className={wishlisted ? 'fill-chuya text-chuya' : ''} />
-                  </button>
                 </div>
               </div>
 

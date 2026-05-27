@@ -78,4 +78,43 @@ router.post('/order-confirmation', async (req: Request, res: Response) => {
   }
 })
 
+/**
+ * POST /api/email/newsletter
+ * Sends a newsletter subscription notification email
+ */
+router.post('/newsletter', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body
+
+    if (!email) {
+      res.status(400).json({ success: false, error: 'Email is required' })
+      return
+    }
+
+    const { error } = await resend.emails.send({
+      from: 'CHUYA <orders@chuya.in>',
+      to: ['pjworldindia@gmail.com'],
+      subject: 'New Newsletter Subscriber',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #1A1A1A;">New Newsletter Subscription!</h2>
+          <p>A new user has subscribed to the CHUYA newsletter.</p>
+          <p><strong>Email:</strong> ${email}</p>
+        </div>
+      `,
+    })
+
+    if (error) {
+      console.error('Newsletter email error:', error)
+      res.status(500).json({ success: false, error: 'Failed to send email' })
+      return
+    }
+
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Newsletter route error:', error)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
 export { router as emailRouter }

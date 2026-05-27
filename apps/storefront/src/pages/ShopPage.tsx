@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useMemo, useState, useEffect } from 'react'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react'
@@ -18,6 +18,17 @@ export default function ShopPage() {
   const maxPrice = searchParams.get('max_price') || ''
   const sort = searchParams.get('sort') || 'newest'
   const search = searchParams.get('search') || ''
+
+  const [localCategory, setLocalCategory] = useState(category)
+  const [localMinPrice, setLocalMinPrice] = useState(minPrice)
+  const [localMaxPrice, setLocalMaxPrice] = useState(maxPrice)
+
+  // Sync local state when URL changes externally (e.g., clearing filters)
+  useEffect(() => {
+    setLocalCategory(category)
+    setLocalMinPrice(minPrice)
+    setLocalMaxPrice(maxPrice)
+  }, [category, minPrice, maxPrice])
 
   // Fetch categories for filter sidebar
   const { data: categories } = useQuery({
@@ -89,17 +100,26 @@ export default function ShopPage() {
     [data]
   )
 
-  const updateFilter = (key: string, value: string) => {
+  const applyFilters = () => {
     const params = new URLSearchParams(searchParams)
-    if (value) {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
+    
+    if (localCategory) params.set('category', localCategory)
+    else params.delete('category')
+    
+    if (localMinPrice) params.set('min_price', localMinPrice)
+    else params.delete('min_price')
+    
+    if (localMaxPrice) params.set('max_price', localMaxPrice)
+    else params.delete('max_price')
+
     setSearchParams(params)
+    setFilterOpen(false) // Close mobile sidebar on apply
   }
 
   const clearFilters = () => {
+    setLocalCategory('')
+    setLocalMinPrice('')
+    setLocalMaxPrice('')
     setSearchParams({})
   }
 
@@ -149,7 +169,11 @@ export default function ShopPage() {
               <div className="relative">
                 <select
                   value={sort}
-                  onChange={(e) => updateFilter('sort', e.target.value)}
+                  onChange={(e) => {
+                    const params = new URLSearchParams(searchParams)
+                    params.set('sort', e.target.value)
+                    setSearchParams(params)
+                  }}
                   className="appearance-none bg-transparent text-sm pr-6 py-1 border-b border-chuya/20 focus:border-chuya/60 outline-none cursor-pointer"
                   id="sort-select"
                 >
@@ -193,8 +217,8 @@ export default function ShopPage() {
                       <input
                         type="radio"
                         name="category"
-                        checked={!category}
-                        onChange={() => updateFilter('category', '')}
+                        checked={!localCategory}
+                        onChange={() => setLocalCategory('')}
                         className="accent-chuya"
                       />
                       <span className="text-sm group-hover:text-taupe transition-colors">
@@ -209,8 +233,8 @@ export default function ShopPage() {
                         <input
                           type="radio"
                           name="category"
-                          checked={category === cat.id}
-                          onChange={() => updateFilter('category', cat.id)}
+                          checked={localCategory === cat.id}
+                          onChange={() => setLocalCategory(cat.id)}
                           className="accent-chuya"
                         />
                         <span className="text-sm group-hover:text-taupe transition-colors">
@@ -230,8 +254,8 @@ export default function ShopPage() {
                     <input
                       type="number"
                       placeholder="Min"
-                      value={minPrice}
-                      onChange={(e) => updateFilter('min_price', e.target.value)}
+                      value={localMinPrice}
+                      onChange={(e) => setLocalMinPrice(e.target.value)}
                       className="input w-full text-xs py-2 px-3"
                       min="0"
                       id="filter-min-price"
@@ -240,8 +264,8 @@ export default function ShopPage() {
                     <input
                       type="number"
                       placeholder="Max"
-                      value={maxPrice}
-                      onChange={(e) => updateFilter('max_price', e.target.value)}
+                      value={localMaxPrice}
+                      onChange={(e) => setLocalMaxPrice(e.target.value)}
                       className="input w-full text-xs py-2 px-3"
                       min="0"
                       id="filter-max-price"
@@ -249,15 +273,24 @@ export default function ShopPage() {
                   </div>
                 </div>
 
+                {/* Apply Button */}
+                <div className="pt-4 border-t border-chuya/10">
+                  <Button variant="primary" fullWidth onClick={applyFilters}>
+                    Apply Filters
+                  </Button>
+                </div>
+
                 {/* Clear */}
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-sm text-muted underline hover:text-chuya transition-colors"
-                    id="clear-filters"
-                  >
-                    Clear all filters
-                  </button>
+                {(hasActiveFilters || localCategory || localMinPrice || localMaxPrice) && (
+                  <div className="text-center">
+                    <button
+                      onClick={clearFilters}
+                      className="text-sm text-muted underline hover:text-chuya transition-colors"
+                      id="clear-filters"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

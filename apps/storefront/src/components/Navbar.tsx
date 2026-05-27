@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Search, User, ShoppingBag, Menu, X } from 'lucide-react'
+import { supabase } from '@chuya/shared/supabase'
+import type { Product } from '@chuya/shared/types'
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
 
@@ -9,6 +11,8 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Product[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const location = useLocation()
   const itemCount = useCartStore((s) => s.getItemCount())
   const user = useAuthStore((s) => s.user)
@@ -22,12 +26,35 @@ export default function Navbar() {
   useEffect(() => {
     setMobileMenuOpen(false)
     setSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
   }, [location.pathname])
 
+  useEffect(() => {
+    const fetchSearch = async () => {
+      if (searchQuery.trim().length > 1) {
+        setIsSearching(true)
+        const { data } = await supabase
+          .from('products')
+          .select('id, name, slug, price, images')
+          .eq('status', 'active')
+          .ilike('name', `%${searchQuery.trim()}%`)
+          .limit(5)
+        setSearchResults((data as Product[]) || [])
+        setIsSearching(false)
+      } else {
+        setSearchResults([])
+      }
+    }
+    
+    const debounce = setTimeout(fetchSearch, 300)
+    return () => clearTimeout(debounce)
+  }, [searchQuery])
+
   const navLinks = [
-    { label: 'Shop', href: '/shop' },
+    { label: 'Home', href: '/' },
     { label: 'Collections', href: '/shop?sort=newest' },
-    { label: 'About', href: '/#brand-story' },
+    { label: 'About', href: '/about' },
   ]
 
   return (
@@ -111,7 +138,7 @@ export default function Navbar() {
         {/* Search bar */}
         {searchOpen && (
           <div className="border-t border-chuya/5 py-4 px-6 md:px-12 animate-fade-in">
-            <div className="max-w-[600px] mx-auto">
+            <div className="max-w-[600px] mx-auto relative">
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -132,6 +159,43 @@ export default function Navbar() {
                   id="search-input"
                 />
               </form>
+              
+              {/* Search Suggestions */}
+              {searchQuery.trim().length > 1 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-cream border border-chuya/10 shadow-lg rounded-sm z-50 overflow-hidden">
+                  {isSearching ? (
+                    <div className="p-4 text-center text-sm text-muted">Searching...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="flex flex-col">
+                      {searchResults.map((product) => (
+                        <Link
+                          key={product.id}
+                          to={`/product/${product.slug}`}
+                          className="flex items-center gap-4 p-3 hover:bg-chuya/5 transition-colors border-b border-chuya/5 last:border-0"
+                        >
+                          <img 
+                            src={product.images?.[0] || '/placeholder-product.jpg'} 
+                            alt={product.name} 
+                            className="w-10 h-12 object-cover" 
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-serif truncate">{product.name}</h4>
+                            <p className="text-xs text-muted">₹{product.price.toLocaleString('en-IN')}</p>
+                          </div>
+                        </Link>
+                      ))}
+                      <Link 
+                        to={`/shop?search=${encodeURIComponent(searchQuery.trim())}`}
+                        className="p-3 text-center text-xs tracking-wider uppercase text-chuya hover:bg-chuya/5 transition-colors bg-chuya/5"
+                      >
+                        View all results
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted">No products found for "{searchQuery}"</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

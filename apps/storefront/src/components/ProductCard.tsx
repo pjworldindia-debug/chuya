@@ -1,19 +1,35 @@
 import { Link } from 'react-router-dom'
 import type { Product } from '@chuya/shared/types'
 import { formatCurrency } from '@chuya/shared/constants'
-import { Heart } from 'lucide-react'
+import { Heart, ShoppingBag } from 'lucide-react'
+import { useWishlistStore } from '../stores/wishlistStore'
+import { useCartStore } from '../stores/cartStore'
 
 interface ProductCardProps {
   product: Product
-  onWishlistToggle?: (productId: string) => void
-  isWishlisted?: boolean
 }
 
-export default function ProductCard({ product, onWishlistToggle, isWishlisted }: ProductCardProps) {
+export default function ProductCard({ product }: ProductCardProps) {
   const primaryImage = product.images?.[0] || '/placeholder-product.jpg'
   const secondaryImage = product.images?.[1]
   const isOutOfStock = product.stock === 0
   const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
+  
+  const isWishlisted = useWishlistStore(s => s.hasItem(product.id))
+  const toggleWishlist = useWishlistStore(s => s.toggleItem)
+  const addToCart = useCartStore(s => s.addItem)
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    addToCart(product.id, 1)
+  }
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleWishlist(product.id)
+  }
 
   return (
     <div className="product-card group" id={`product-card-${product.slug}`}>
@@ -24,6 +40,7 @@ export default function ProductCard({ product, onWishlistToggle, isWishlisted }:
           alt={product.name}
           className="product-card-image"
           loading="lazy"
+          decoding="async"
         />
 
         {/* Secondary image on hover */}
@@ -33,6 +50,7 @@ export default function ProductCard({ product, onWishlistToggle, isWishlisted }:
             alt={`${product.name} - alternate view`}
             className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             loading="lazy"
+            decoding="async"
           />
         )}
 
@@ -58,21 +76,28 @@ export default function ProductCard({ product, onWishlistToggle, isWishlisted }:
         </div>
 
         {/* Wishlist */}
-        {onWishlistToggle && (
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onWishlistToggle(product.id)
-            }}
-            className="absolute top-3 right-3 p-2 bg-cream/80 backdrop-blur-sm hover:bg-cream transition-colors opacity-0 group-hover:opacity-100"
-            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-          >
-            <Heart
-              size={16}
-              className={isWishlisted ? 'fill-chuya text-chuya' : 'text-chuya'}
-            />
-          </button>
+        <button
+          onClick={handleWishlistClick}
+          className="absolute top-3 right-3 p-2 bg-cream/80 backdrop-blur-sm hover:bg-cream transition-colors opacity-0 group-hover:opacity-100"
+          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart
+            size={16}
+            className={isWishlisted ? 'fill-chuya text-chuya' : 'text-chuya'}
+          />
+        </button>
+
+        {/* Quick Add Overlay */}
+        {!isOutOfStock && (
+          <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
+            <button
+              onClick={handleQuickAdd}
+              className="w-full bg-cream/95 backdrop-blur-sm text-chuya py-3 text-sm tracking-wider uppercase font-medium hover:bg-chuya hover:text-cream transition-colors flex items-center justify-center gap-2"
+            >
+              <ShoppingBag size={16} />
+              Quick Add
+            </button>
+          </div>
         )}
       </Link>
 
