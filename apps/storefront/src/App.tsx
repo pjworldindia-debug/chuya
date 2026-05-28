@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { useEffect, lazy, Suspense } from 'react'
 import Layout from './components/Layout'
 import ScrollToTop from './components/ScrollToTop'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const ShopPage = lazy(() => import('./pages/ShopPage'))
@@ -75,23 +76,25 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-pulse font-serif text-2xl tracking-[0.15em]">CHUYA</div></div>}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/product/:slug" element={<ProductPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/account" element={<AccountPage />} />
-            <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/returns" element={<ReturnsPage />} />
-            <Route path="/about" element={<AboutPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-pulse font-serif text-2xl tracking-[0.15em]">CHUYA</div></div>}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/product/:slug" element={<ProductPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/account" element={<AccountPage />} />
+              <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/returns" element={<ReturnsPage />} />
+              <Route path="/about" element={<AboutPage />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </>
   )
 }
