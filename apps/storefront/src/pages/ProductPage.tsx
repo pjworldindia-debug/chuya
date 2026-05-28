@@ -29,7 +29,7 @@ export default function ProductPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const toggleWishlist = useWishlistStore((s) => s.toggleItem)
-  const isWishlisted = useWishlistStore((s) => product ? s.hasItem(product.id) : false)
+
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
@@ -44,6 +44,8 @@ export default function ProductPage() {
     },
     enabled: !!slug,
   })
+
+  const isWishlisted = useWishlistStore((s) => product ? s.hasItem(product.id) : false)
 
   const { data: relatedProducts } = useQuery({
     queryKey: ['products', 'related', product?.category_id, product?.id],
