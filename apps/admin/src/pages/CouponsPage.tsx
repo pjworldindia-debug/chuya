@@ -36,11 +36,16 @@ export default function CouponsPage() {
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ['admin', 'coupons'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('coupons')
         .select('*')
         .order('is_active', { ascending: false })
         .order('code', { ascending: true })
+      
+      if (error) {
+        console.error('Failed to fetch coupons:', error)
+        throw error
+      }
       return (data || []) as Coupon[]
     },
   })
@@ -154,7 +159,7 @@ export default function CouponsPage() {
         <div className="text-sm text-gray-400">Loading coupons...</div>
       ) : coupons.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-400 mb-4">No coupons yet</p>
+          <p className="text-gray-400 mb-4">No coupons yet (or there was an error loading them).</p>
           <button onClick={openCreate} className="admin-btn admin-btn-primary">
             <Plus size={16} className="mr-1" /> Create your first coupon
           </button>
