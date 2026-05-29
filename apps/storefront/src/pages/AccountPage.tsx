@@ -137,6 +137,18 @@ export default function AccountPage() {
                           <p>{formatCurrency(item.price * item.quantity)}</p>
                         </div>
                       ))}
+                      {order.tracking_url && order.payment_status === 'paid' && (
+                        <div className="pt-3 flex justify-end">
+                          <a 
+                            href={order.tracking_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-chuya text-white text-xs px-4 py-2 hover:bg-chuya/90 transition-colors inline-flex items-center gap-2"
+                          >
+                            <Package size={14} /> Track Order
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

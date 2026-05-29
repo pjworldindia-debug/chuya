@@ -129,6 +129,9 @@ export default function HomePage() {
     },
   })
 
+  const heroBanners = banners.filter(b => b.position !== 'secondary')
+  const secondaryBanners = banners.filter(b => b.position === 'secondary')
+
   return (
     <>
       <Helmet>
@@ -141,7 +144,7 @@ export default function HomePage() {
 
       {/* ── Hero Banner Carousel ── */}
       <section className="relative" id="hero-banner">
-        {banners.length > 0 ? (
+        {heroBanners.length > 0 ? (
           <Swiper
             modules={[Autoplay, Pagination, EffectFade]}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
@@ -150,14 +153,25 @@ export default function HomePage() {
             loop={banners.length > 1}
             className="w-full h-[70vh] md:h-[85vh]"
           >
-            {banners.map((banner) => (
+            {heroBanners.map((banner) => (
               <SwiperSlide key={banner.id}>
                 <div className="relative w-full h-full">
-                  <img
-                    src={banner.image_url}
-                    alt={banner.title || 'CHUYA'}
-                    className="w-full h-full object-cover"
-                  />
+                  {banner.video_url ? (
+                    <video
+                      src={banner.video_url}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={banner.image_url}
+                      alt={banner.title || 'CHUYA'}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                   {/* Overlay */}
                   <div
                     className="absolute inset-0"
@@ -243,6 +257,59 @@ export default function HomePage() {
                 </div>
               </Link>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Secondary Banner ── */}
+      {secondaryBanners.length > 0 && (
+        <section className="relative w-full h-[50vh] md:h-[60vh] mt-16 md:mt-24">
+          <div className="relative w-full h-full">
+            {secondaryBanners[0].video_url ? (
+              <video
+                src={secondaryBanners[0].video_url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <img
+                src={secondaryBanners[0].image_url}
+                alt={secondaryBanners[0].title || 'CHUYA Collection'}
+                className="w-full h-full object-cover"
+              />
+            )}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundColor: `rgba(0, 0, 0, ${(secondaryBanners[0].overlay_opacity || 30) / 100})`,
+              }}
+            />
+            <div
+              className={`absolute inset-0 flex flex-col items-center justify-center text-center px-6 ${
+                secondaryBanners[0].text_color === 'dark' ? 'text-chuya' : 'text-cream'
+              }`}
+            >
+              {secondaryBanners[0].title && (
+                <h2 className="font-serif text-3xl md:text-5xl lg:text-6xl mb-4">
+                  {secondaryBanners[0].title}
+                </h2>
+              )}
+              {secondaryBanners[0].subtitle && (
+                <p className="text-sm md:text-base tracking-[0.15em] uppercase opacity-80 mb-8 max-w-xl">
+                  {secondaryBanners[0].subtitle}
+                </p>
+              )}
+              {secondaryBanners[0].cta_label && secondaryBanners[0].cta_url && (
+                <Link to={secondaryBanners[0].cta_url}>
+                  <Button variant={secondaryBanners[0].text_color === 'dark' ? 'ghost' : 'primary'}>
+                    {secondaryBanners[0].cta_label}
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
         </section>
       )}

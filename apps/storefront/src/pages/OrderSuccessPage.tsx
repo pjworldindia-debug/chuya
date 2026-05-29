@@ -113,12 +113,24 @@ export default function OrderSuccessPage() {
       <Helmet><title>Order Confirmed — CHUYA</title></Helmet>
       <div className="section min-h-[70vh]" id="order-success">
         <div className="max-w-[600px] mx-auto text-center">
-          <div className="w-16 h-16 bg-green-50 flex items-center justify-center mx-auto mb-6 animate-fade-in">
-            <CheckCircle size={32} className="text-green-500" />
-          </div>
+          {order.payment_status === 'failed' ? (
+            <div className="w-16 h-16 bg-red-50 flex items-center justify-center mx-auto mb-6 animate-fade-in rounded-full">
+              <span className="text-red-500 text-3xl font-bold">!</span>
+            </div>
+          ) : (
+            <div className="w-16 h-16 bg-green-50 flex items-center justify-center mx-auto mb-6 animate-fade-in rounded-full">
+              <CheckCircle size={32} className="text-green-500" />
+            </div>
+          )}
 
-          <h1 className="font-serif text-3xl md:text-4xl mb-2 animate-fade-in">Thank You!</h1>
-          <p className="text-muted mb-8 animate-fade-in">Your order has been placed successfully.</p>
+          <h1 className="font-serif text-3xl md:text-4xl mb-2 animate-fade-in">
+            {order.payment_status === 'failed' ? 'Payment Incomplete' : 'Thank You!'}
+          </h1>
+          <p className="text-muted mb-8 animate-fade-in">
+            {order.payment_status === 'failed' 
+              ? 'Your payment could not be completed successfully. Please try again.' 
+              : 'Your order has been placed successfully.'}
+          </p>
 
           <div className="bg-white p-6 md:p-8 text-left space-y-4 animate-slide-up">
             <div className="flex justify-between text-sm">

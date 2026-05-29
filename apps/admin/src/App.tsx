@@ -9,6 +9,7 @@ import BannersPage from './pages/BannersPage'
 import OrdersPage from './pages/OrdersPage'
 import CouponsPage from './pages/CouponsPage'
 import LoginPage from './pages/LoginPage'
+import SubscribersPage from './pages/SubscribersPage'
 
 type AuthState = 'loading' | 'authorized' | 'unauthorized' | 'unauthenticated'
 
@@ -95,6 +96,7 @@ export default function App() {
         <Route path="/banners" element={<BannersPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/coupons" element={<CouponsPage />} />
+        <Route path="/subscribers" element={<SubscribersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

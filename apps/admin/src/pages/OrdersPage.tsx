@@ -37,6 +37,14 @@ export default function OrdersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }),
   })
 
+  const updateTracking = useMutation({
+    mutationFn: async ({ id, url }: { id: string; url: string }) => {
+      const { error } = await supabase.from('orders').update({ tracking_url: url }).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }),
+  })
+
   const badge = (s: string) => {
     if (['paid', 'delivered'].includes(s)) return 'admin-badge-active'
     if (['failed', 'cancelled', 'refunded'].includes(s)) return 'admin-badge-archived'
@@ -136,6 +144,24 @@ export default function OrdersPage() {
                           {order.phonepe_transaction_id && (
                             <p className="mt-1 text-xs text-gray-400">PhonePe TXN: <span className="font-mono">{order.phonepe_transaction_id}</span></p>
                           )}
+                          
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <h4 className="text-xs font-medium text-gray-500 uppercase mb-2">Tracking Link</h4>
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="url" 
+                                placeholder="https://shiprocket..." 
+                                className="admin-input flex-1 text-xs" 
+                                defaultValue={order.tracking_url || ''}
+                                onBlur={(e) => {
+                                  if (e.target.value !== (order.tracking_url || '')) {
+                                    updateTracking.mutate({ id: order.id, url: e.target.value })
+                                  }
+                                }}
+                              />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">Blur input to save automatically.</p>
+                          </div>
                         </div>
                       </div>
                     </td>

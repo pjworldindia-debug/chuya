@@ -116,6 +116,8 @@ export type Database = {
         Row: {
           id: string
           image_url: string
+          video_url: string | null
+          position: string
           title: string | null
           subtitle: string | null
           cta_label: string | null
@@ -131,6 +133,8 @@ export type Database = {
         Insert: {
           id?: string
           image_url: string
+          video_url?: string | null
+          position?: string
           title?: string | null
           subtitle?: string | null
           cta_label?: string | null
@@ -146,6 +150,8 @@ export type Database = {
         Update: {
           id?: string
           image_url?: string
+          video_url?: string | null
+          position?: string
           title?: string | null
           subtitle?: string | null
           cta_label?: string | null
@@ -164,52 +170,55 @@ export type Database = {
           id: string
           user_id: string | null
           guest_email: string | null
-          items: Json
-          shipping_address: Json
+          items: unknown
+          shipping_address: unknown
           subtotal: number
           gst: number
-          discount: number
+          discount: number | null
           coupon_code: string | null
           total: number
           phonepe_transaction_id: string | null
-          payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
-          fulfilment_status: 'placed' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-          timeline: Json
-          created_at: string
+          payment_status: string | null
+          fulfilment_status: string | null
+          timeline: unknown | null
+          tracking_url: string | null
+          created_at: string | null
         }
         Insert: {
           id?: string
           user_id?: string | null
           guest_email?: string | null
-          items: Json
-          shipping_address: Json
+          items: unknown
+          shipping_address: unknown
           subtotal: number
           gst: number
-          discount?: number
+          discount?: number | null
           coupon_code?: string | null
           total: number
           phonepe_transaction_id?: string | null
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          fulfilment_status?: 'placed' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-          timeline?: Json
-          created_at?: string
+          payment_status?: string | null
+          fulfilment_status?: string | null
+          timeline?: unknown | null
+          tracking_url?: string | null
+          created_at?: string | null
         }
         Update: {
           id?: string
           user_id?: string | null
           guest_email?: string | null
-          items?: Json
-          shipping_address?: Json
+          items?: unknown
+          shipping_address?: unknown
           subtotal?: number
           gst?: number
-          discount?: number
+          discount?: number | null
           coupon_code?: string | null
           total?: number
           phonepe_transaction_id?: string | null
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          fulfilment_status?: 'placed' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-          timeline?: Json
-          created_at?: string
+          payment_status?: string | null
+          fulfilment_status?: string | null
+          timeline?: unknown | null
+          tracking_url?: string | null
+          created_at?: string | null
         }
       }
       coupons: {

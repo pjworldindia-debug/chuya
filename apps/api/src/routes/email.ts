@@ -1,8 +1,14 @@
 import { Router, type Request, type Response } from 'express'
 import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@chuya/shared/database.types'
 
 const router = Router()
 const resend = new Resend(process.env.RESEND_API_KEY || '')
+const supabaseAdmin = createClient<Database>(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
 
 /**
  * POST /api/email/order-confirmation
@@ -90,6 +96,11 @@ router.post('/newsletter', async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: 'Email is required' })
       return
     }
+
+    // Insert into Supabase
+    await supabaseAdmin.from('subscribers').insert({ email }).catch(err => {
+      console.warn('Subscriber insert failed (might already exist):', err)
+    })
 
     const { error } = await resend.emails.send({
       from: 'CHUYA <orders@chuya.in>',

@@ -28,7 +28,7 @@ export default function BannersPage() {
 
   const openAdd = () => {
     setEditing(null)
-    form.reset({ text_color: 'light', overlay_opacity: 30, display_order: banners?.length || 0, is_active: false })
+    form.reset({ position: 'hero', text_color: 'light', overlay_opacity: 30, display_order: banners?.length || 0, is_active: false })
     setImgUrl('')
     setDialogOpen(true)
   }
@@ -36,7 +36,7 @@ export default function BannersPage() {
   const openEdit = (b: Banner) => {
     setEditing(b)
     form.reset({
-      image_url: b.image_url, title: b.title, subtitle: b.subtitle,
+      image_url: b.image_url, video_url: b.video_url || '', position: b.position as 'hero' | 'secondary', title: b.title, subtitle: b.subtitle,
       cta_label: b.cta_label, cta_url: b.cta_url, text_color: b.text_color,
       overlay_opacity: b.overlay_opacity, display_order: b.display_order, is_active: b.is_active,
     })
@@ -108,11 +108,15 @@ export default function BannersPage() {
           {banners.map((b) => (
             <div key={b.id} className="admin-card p-0 overflow-hidden group">
               <div className="relative aspect-[16/5]">
-                <img src={b.image_url} alt={b.title || ''} className="w-full h-full object-cover" />
+                {b.video_url ? (
+                  <video src={b.video_url} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                ) : (
+                  <img src={b.image_url} alt={b.title || ''} className="w-full h-full object-cover" />
+                )}
                 <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${(b.overlay_opacity || 30) / 100})` }} />
                 {b.title && (
                   <div className={`absolute bottom-3 left-3 ${b.text_color === 'dark' ? 'text-gray-900' : 'text-white'}`}>
-                    <p className="font-medium text-sm">{b.title}</p>
+                    <p className="font-medium text-sm">{b.title} <span className="ml-2 text-[10px] uppercase bg-black/20 px-1 rounded">{b.position}</span></p>
                     {b.subtitle && <p className="text-xs opacity-80">{b.subtitle}</p>}
                   </div>
                 )}
@@ -159,6 +163,10 @@ export default function BannersPage() {
                     <input type="file" accept="image/*" onChange={handleImgUpload} className="hidden" />
                   </label>
                 )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-xs font-medium text-gray-500 uppercase">Video URL (Optional)</label><input {...form.register('video_url')} placeholder="https://..." className="admin-input mt-1" /></div>
+                <div><label className="text-xs font-medium text-gray-500 uppercase">Position</label><select {...form.register('position')} className="admin-input mt-1"><option value="hero">Hero (Top)</option><option value="secondary">Secondary (Middle)</option></select></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-xs font-medium text-gray-500 uppercase">Title</label><input {...form.register('title')} className="admin-input mt-1" /></div>

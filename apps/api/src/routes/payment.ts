@@ -151,6 +151,82 @@ router.post('/initiate', async (req: Request, res: Response) => {
   }
 })
 
+async function checkAndUpdateStatus(orderId: string) {
+  const accessToken = await getPhonePeToken()
+  
+  // Status endpoint: /apis/pg/v3/transaction/{merchantId}/{merchantOrderId}/status
+  const statusUrl = `${URLS.status}/${PHONEPE_MERCHANT_ID}/${orderId}/status`
+
+  const response = await fetch(statusUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `O-Bearer ${accessToken}`
+    }
+  })
+
+  const phonePeData = await response.json()
+  
+  if (phonePeData.state) {
+    const paymentStatus = phonePeData.state === 'COMPLETED' ? 'paid' : phonePeData.state === 'FAILED' ? 'failed' : 'pending'
+
+    // Check current status before updating to avoid duplicate decrements
+    const { data: currentOrder } = await supabaseAdmin
+      .from('orders')
+      .select('payment_status, items, timeline')
+      .eq('id', orderId)
+      .single()
+
+    if (currentOrder && currentOrder.payment_status !== paymentStatus) {
+      // Update order
+      const { error: updateError } = await supabaseAdmin
+        .from('orders')
+        .update({
+          payment_status: paymentStatus,
+          fulfilment_status: paymentStatus === 'paid' ? 'confirmed' : 'placed',
+        })
+        .eq('id', orderId)
+
+      if (updateError) {
+        console.error('Order update error:', updateError)
+      }
+
+      // Decrement stock if newly paid
+      if (paymentStatus === 'paid' && currentOrder.payment_status !== 'paid') {
+        if (Array.isArray(currentOrder.items)) {
+          for (const item of currentOrder.items as { productId: string; quantity: number }[]) {
+            const productId = item.productId
+            if (!productId) continue
+            
+            const { data: product } = await supabaseAdmin
+              .from('products')
+              .select('stock')
+              .eq('id', productId)
+              .single()
+              
+            if (product) {
+              const newStock = Math.max(0, product.stock - item.quantity)
+              await supabaseAdmin.from('products').update({ stock: newStock }).eq('id', productId)
+            }
+          }
+        }
+      }
+
+      // Add timeline entry
+      const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : []
+      timeline.push({
+        status: paymentStatus === 'paid' ? 'confirmed' : paymentStatus,
+        timestamp: new Date().toISOString(),
+        note: paymentStatus === 'paid' ? 'Payment confirmed' : `Payment ${paymentStatus}`,
+      })
+      await supabaseAdmin.from('orders').update({ timeline }).eq('id', orderId)
+    }
+
+    return paymentStatus
+  }
+  
+  throw new Error('Could not fetch status from PhonePe')
+}
+
 /**
  * GET /api/payment/status/:orderId
  * Safely checks PhonePe V2 status and updates the database
@@ -164,82 +240,39 @@ router.get('/status/:orderId', async (req: Request, res: Response) => {
       return
     }
 
-    const accessToken = await getPhonePeToken()
-    
-    // Status endpoint: /apis/pg/v3/transaction/{merchantId}/{merchantOrderId}/status
-    const statusUrl = `${URLS.status}/${PHONEPE_MERCHANT_ID}/${orderId}/status`
-
-    const response = await fetch(statusUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `O-Bearer ${accessToken}`
-      }
-    })
-
-    const phonePeData = await response.json()
-    
-    if (phonePeData.state) {
-      const paymentStatus = phonePeData.state === 'COMPLETED' ? 'paid' : phonePeData.state === 'FAILED' ? 'failed' : 'pending'
-
-      // Check current status before updating to avoid duplicate decrements
-      const { data: currentOrder } = await supabaseAdmin
-        .from('orders')
-        .select('payment_status, items, timeline')
-        .eq('id', orderId)
-        .single()
-
-      if (currentOrder && currentOrder.payment_status !== paymentStatus) {
-        // Update order
-        const { error: updateError } = await supabaseAdmin
-          .from('orders')
-          .update({
-            payment_status: paymentStatus,
-            fulfilment_status: paymentStatus === 'paid' ? 'confirmed' : 'placed',
-          })
-          .eq('id', orderId)
-
-        if (updateError) {
-          console.error('Order update error:', updateError)
-        }
-
-        // Decrement stock if newly paid
-        if (paymentStatus === 'paid' && currentOrder.payment_status !== 'paid') {
-          if (Array.isArray(currentOrder.items)) {
-            for (const item of currentOrder.items as { productId: string; quantity: number }[]) {
-              const productId = item.productId
-              if (!productId) continue
-              
-              const { data: product } = await supabaseAdmin
-                .from('products')
-                .select('stock')
-                .eq('id', productId)
-                .single()
-                
-              if (product) {
-                const newStock = Math.max(0, product.stock - item.quantity)
-                await supabaseAdmin.from('products').update({ stock: newStock }).eq('id', productId)
-              }
-            }
-          }
-        }
-
-        // Add timeline entry
-        const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : []
-        timeline.push({
-          status: paymentStatus === 'paid' ? 'confirmed' : paymentStatus,
-          timestamp: new Date().toISOString(),
-          note: paymentStatus === 'paid' ? 'Payment confirmed' : `Payment ${paymentStatus}`,
-        })
-        await supabaseAdmin.from('orders').update({ timeline }).eq('id', orderId)
-      }
-
-      res.json({ success: true, status: paymentStatus })
-    } else {
-      res.status(400).json({ success: false, error: 'Could not fetch status' })
-    }
+    const paymentStatus = await checkAndUpdateStatus(orderId)
+    res.json({ success: true, status: paymentStatus })
   } catch (error) {
     console.error('Status check error:', error)
     res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
+/**
+ * POST /api/payment/callback
+ * Server-to-server webhook from PhonePe
+ */
+router.post('/callback', async (req: Request, res: Response) => {
+  try {
+    const { response } = req.body
+    
+    if (response) {
+      // PhonePe sends Base64 encoded JSON response
+      const decodedResponse = Buffer.from(response, 'base64').toString('utf-8')
+      const payload = JSON.parse(decodedResponse)
+      
+      const orderId = payload.data?.merchantTransactionId || payload.data?.merchantOrderId
+      if (orderId) {
+        // Securely fetch status directly from PhonePe instead of relying on the payload
+        await checkAndUpdateStatus(orderId)
+      }
+    }
+    
+    // Always return 200 OK so PhonePe stops retrying
+    res.status(200).send('OK')
+  } catch (error) {
+    console.error('Callback error:', error)
+    res.status(200).send('OK') // Still return 200 to acknowledge receipt
   }
 })
 

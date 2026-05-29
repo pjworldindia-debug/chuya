@@ -104,14 +104,14 @@ export default function Footer() {
           <div>
             <h4 className="text-xs tracking-[0.2em] uppercase text-cream/40 mb-6">Shop</h4>
             <div className="flex flex-col gap-3">
+              <Link to="/" className="text-sm text-cream/70 hover:text-cream transition-colors">
+                Home
+              </Link>
+              <Link to="/about" className="text-sm text-cream/70 hover:text-cream transition-colors">
+                About Us
+              </Link>
               <Link to="/shop" className="text-sm text-cream/70 hover:text-cream transition-colors">
                 All Products
-              </Link>
-              <Link to="/shop?sort=newest" className="text-sm text-cream/70 hover:text-cream transition-colors">
-                New Arrivals
-              </Link>
-              <Link to="/shop?featured=true" className="text-sm text-cream/70 hover:text-cream transition-colors">
-                Featured
               </Link>
             </div>
           </div>
