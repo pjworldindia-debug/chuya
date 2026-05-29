@@ -9,9 +9,9 @@ export const BRAND = {
   tagline: 'Luxury Handcrafted Indian Handbags',
   description: 'Crafted in 2025, Chuya was born out of a passion for premium accessories. From stunning evening clutches to high-end handbags, our focus is on delivering unique masterpieces that set you apart. Discover the world of Chuya—where every stitch tells a story of luxury.',
   email: 'chuya.co.in@gmail.com',
-  address: 'Chuya, Station road dalauda 458667 Indore, M.P., India',
+  address: 'Chuya, Station road dalauda 458667 mandsaur, M.P., India',
   instagram: 'https://www.instagram.com/chuya_pj?igsh=MTBtMnpsc2Q1Njczaw==',
-  whatsapp: '918889008998',
+  whatsapp: '918889004998',
 } as const
 
 export const COLORS = {

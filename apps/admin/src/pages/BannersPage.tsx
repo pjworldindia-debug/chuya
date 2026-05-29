@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Pencil, Trash2, X, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@chuya/shared/supabase'
 import { bannerSchema, type BannerFormData } from '@chuya/shared/schemas'
-import { uploadImage } from '@chuya/shared/storage'
+import { uploadImage, uploadFile } from '@chuya/shared/storage'
 import type { Banner } from '@chuya/shared/types'
 
 export default function BannersPage() {
@@ -13,7 +13,9 @@ export default function BannersPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Banner | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
   const [imgUrl, setImgUrl] = useState('')
+  const [vidUrl, setVidUrl] = useState('')
 
   const { data: banners, isLoading } = useQuery({
     queryKey: ['admin', 'banners'],
@@ -30,6 +32,7 @@ export default function BannersPage() {
     setEditing(null)
     form.reset({ position: 'hero', text_color: 'light', overlay_opacity: 30, display_order: banners?.length || 0, is_active: false })
     setImgUrl('')
+    setVidUrl('')
     setDialogOpen(true)
   }
 
@@ -41,12 +44,13 @@ export default function BannersPage() {
       overlay_opacity: b.overlay_opacity, display_order: b.display_order, is_active: b.is_active,
     })
     setImgUrl(b.image_url)
+    setVidUrl(b.video_url || '')
     setDialogOpen(true)
   }
 
   const saveMutation = useMutation({
     mutationFn: async (data: BannerFormData) => {
-      const payload = { ...data, image_url: imgUrl }
+      const payload = { ...data, image_url: imgUrl, video_url: vidUrl || null }
       if (editing) {
         const { error } = await supabase.from('banners').update(payload).eq('id', editing.id)
         if (error) throw error
@@ -87,6 +91,21 @@ export default function BannersPage() {
       alert(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingVideo(true)
+    try {
+      const url = await uploadFile(file, 'banner-images')
+      setVidUrl(url)
+      form.setValue('video_url', url)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingVideo(false)
     }
   }
 
@@ -167,11 +186,28 @@ export default function BannersPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Video URL (Optional)</label>
-                  <input {...form.register('video_url')} placeholder="https://..." className="admin-input mt-1" />
+                  <label className="text-xs font-medium text-gray-500 uppercase">Video (Optional)</label>
+                  {vidUrl ? (
+                    <div className="mt-2 relative aspect-[16/5] rounded overflow-hidden bg-black">
+                      <video src={vidUrl} className="w-full h-full object-cover" controls />
+                      <button type="button" onClick={() => { setVidUrl(''); form.setValue('video_url', '') }} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full text-sm flex items-center justify-center z-10">×</button>
+                    </div>
+                  ) : (
+                    <label className="mt-2 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-3 cursor-pointer hover:border-gray-400 text-sm">
+                      {uploadingVideo ? 'Uploading...' : 'Upload Video File'}
+                      <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+                    </label>
+                  )}
                   {form.formState.errors.video_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.video_url.message}</p>}
                 </div>
-                <div><label className="text-xs font-medium text-gray-500 uppercase">Position</label><select {...form.register('position')} className="admin-input mt-1"><option value="hero">Hero (Top)</option><option value="secondary">Secondary (Middle)</option></select></div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Position</label>
+                  <select {...form.register('position')} className="admin-input mt-1">
+                    <option value="hero">Hero (Top)</option>
+                    <option value="secondary">Secondary (Middle)</option>
+                    <option value="story">Our Story</option>
+                  </select>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-xs font-medium text-gray-500 uppercase">Title</label><input {...form.register('title')} className="admin-input mt-1" /></div>

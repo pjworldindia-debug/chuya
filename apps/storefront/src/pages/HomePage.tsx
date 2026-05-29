@@ -129,8 +129,9 @@ export default function HomePage() {
     },
   })
 
-  const heroBanners = banners.filter(b => b.position !== 'secondary')
+  const heroBanners = banners.filter(b => !b.position || b.position === 'hero')
   const secondaryBanners = banners.filter(b => b.position === 'secondary')
+  const storyBanners = banners.filter(b => b.position === 'story')
 
   return (
     <>
@@ -364,11 +365,38 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
           {/* Image side */}
           <div className="relative h-[400px] lg:h-auto overflow-hidden">
-            <div className="absolute inset-0 bg-chuya flex items-center justify-center">
-              <div className="text-cream text-center px-12">
-                <p className="font-serif text-6xl md:text-8xl opacity-10">C</p>
+            {storyBanners.length > 0 ? (
+              <>
+                {storyBanners[0].video_url ? (
+                  <video
+                    src={storyBanners[0].video_url}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={storyBanners[0].image_url}
+                    alt={storyBanners[0].title || 'Our Story'}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: `rgba(0, 0, 0, ${(storyBanners[0].overlay_opacity || 0) / 100})`,
+                  }}
+                />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-chuya flex items-center justify-center">
+                <div className="text-cream text-center px-12">
+                  <p className="font-serif text-6xl md:text-8xl opacity-10">C</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Content side */}

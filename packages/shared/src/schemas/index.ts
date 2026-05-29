@@ -43,7 +43,7 @@ export type CategoryFormData = z.infer<typeof categorySchema>
 export const bannerSchema = z.object({
   image_url: z.string().url('Banner image URL is required'),
   video_url: z.string().url().nullable().optional().or(z.literal('')),
-  position: z.enum(['hero', 'secondary']).default('hero'),
+  position: z.enum(['hero', 'secondary', 'story']).default('hero'),
   title: z.string().nullable().optional(),
   subtitle: z.string().nullable().optional(),
   cta_label: z.string().nullable().optional(),

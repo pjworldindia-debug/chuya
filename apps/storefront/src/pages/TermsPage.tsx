@@ -1,3 +1,5 @@
+import { BRAND } from '@chuya/shared/constants'
+
 export default function TermsPage() {
   return (
     <div className="pt-24 pb-16 px-6 md:px-12 max-w-4xl mx-auto min-h-screen">
@@ -32,10 +34,10 @@ export default function TermsPage() {
         <h2 className="text-xl font-bold mt-8 mb-4 text-chuya">9. Governing Law</h2>
         <p>These terms shall be governed by and construed in accordance with the laws of India.</p>
         
-        <p className="mt-8 font-medium">Contact - <a href="mailto:chuya.co.in@gmail.com" className="underline underline-offset-4 hover:text-chuya transition-colors">chuya.co.in@gmail.com</a></p>
+        <p className="mt-8 font-medium">Contact - <a href={`mailto:${BRAND.email}`} className="underline underline-offset-4 hover:text-chuya transition-colors">{BRAND.email}</a></p>
         <p className="mt-2 font-medium">
-          Phone : 8889008998<br />
-          CHUYA. By PJ World
+          Phone : +91 {BRAND.whatsapp.replace('91', '')}<br />
+          {BRAND.address}
         </p>
       </div>
     </div>

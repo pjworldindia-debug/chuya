@@ -1,3 +1,5 @@
+import { BRAND } from '@chuya/shared/constants'
+
 export default function ReturnsPage() {
   return (
     <div className="pt-24 pb-16 px-6 md:px-12 max-w-4xl mx-auto min-h-screen">
@@ -26,10 +28,10 @@ export default function ReturnsPage() {
           <li>Tracking details are shared once the order is shipped.</li>
           <li>The business is not responsible for delays due to courier services or unforeseen circumstances.</li>
         </ul>
-        <p className="mt-4">Contact - <a href="mailto:chuya.co.in@gmail.com" className="underline underline-offset-4 hover:text-chuya transition-colors">chuya.co.in@gmail.com</a></p>
-        <p className="mt-2">
-          Phone : 8889008998<br />
-          CHUYA. By PJ World
+        <p className="mt-8 font-medium">Contact - <a href={`mailto:${BRAND.email}`} className="underline underline-offset-4 hover:text-chuya transition-colors">{BRAND.email}</a></p>
+        <p className="mt-2 font-medium">
+          Phone : +91 {BRAND.whatsapp.replace('91', '')}<br />
+          {BRAND.address}
         </p>
       </div>
     </div>

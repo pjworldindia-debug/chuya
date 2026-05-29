@@ -90,6 +90,45 @@ export async function uploadImage(
 }
 
 /**
+ * Upload a raw file to Supabase Storage without conversion.
+ * Ideal for videos or documents.
+ * Returns the public URL of the uploaded file.
+ */
+export async function uploadFile(
+  file: File,
+  bucket: StorageBucket
+): Promise<string> {
+  try {
+    // Generate unique filename preserving extension
+    const uuid = crypto.randomUUID()
+    const timestamp = Date.now()
+    const extension = file.name.split('.').pop() || 'bin'
+    const filename = `${uuid}-${timestamp}.${extension}`
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filename, file, {
+        contentType: file.type,
+        cacheControl: '31536000', // 1 year cache
+        upsert: false,
+      })
+
+    if (uploadError) {
+      throw new Error(`Upload failed: ${uploadError.message}`)
+    }
+
+    // Get public URL
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filename)
+
+    return data.publicUrl
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown upload error'
+    throw new Error(message)
+  }
+}
+
+/**
  * Delete an image from Supabase Storage by its public URL.
  */
 export async function deleteImage(
