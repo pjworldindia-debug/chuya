@@ -5,9 +5,9 @@ import type { Database } from '@chuya/shared/database.types'
 
 const router = Router()
 
-const supabaseAdmin = createClient<Database>(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const getSupabaseAdmin = () => createClient<Database>(
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 )
 
 // PhonePe V2 Credentials
@@ -69,6 +69,8 @@ router.post('/initiate', async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: 'Missing required fields' })
       return
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Create order in database
     const { error: orderError } = await supabaseAdmin.from('orders').insert({

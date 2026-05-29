@@ -163,9 +163,14 @@ export default function BannersPage() {
                     <input type="file" accept="image/*" onChange={handleImgUpload} className="hidden" />
                   </label>
                 )}
+                {form.formState.errors.image_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.image_url.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-xs font-medium text-gray-500 uppercase">Video URL (Optional)</label><input {...form.register('video_url')} placeholder="https://..." className="admin-input mt-1" /></div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Video URL (Optional)</label>
+                  <input {...form.register('video_url')} placeholder="https://..." className="admin-input mt-1" />
+                  {form.formState.errors.video_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.video_url.message}</p>}
+                </div>
                 <div><label className="text-xs font-medium text-gray-500 uppercase">Position</label><select {...form.register('position')} className="admin-input mt-1"><option value="hero">Hero (Top)</option><option value="secondary">Secondary (Middle)</option></select></div>
               </div>
               <div className="grid grid-cols-2 gap-3">

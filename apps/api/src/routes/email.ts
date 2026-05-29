@@ -5,9 +5,9 @@ import type { Database } from '@chuya/shared/database.types'
 
 const router = Router()
 const resend = new Resend(process.env.RESEND_API_KEY || '')
-const supabaseAdmin = createClient<Database>(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const getSupabaseAdmin = () => createClient<Database>(
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 )
 
 /**
@@ -97,10 +97,11 @@ router.post('/newsletter', async (req: Request, res: Response) => {
       return
     }
 
-    // Insert into Supabase
-    await supabaseAdmin.from('subscribers').insert({ email }).catch(err => {
-      console.warn('Subscriber insert failed (might already exist):', err)
-    })
+    const supabaseAdmin = getSupabaseAdmin()
+    const { error: insertError } = await supabaseAdmin.from('subscribers').insert({ email })
+    if (insertError) {
+      console.warn('Subscriber insert failed (might already exist):', insertError)
+    }
 
     const { error } = await resend.emails.send({
       from: 'CHUYA <orders@chuya.in>',
