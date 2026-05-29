@@ -85,11 +85,12 @@ export default function CartPage() {
     setOrderLoading(true)
     try {
       const apiUrl = import.meta.env.VITE_API_URL || ''
+      const orderIdStr = crypto.randomUUID().replace(/-/g, '')
       const res = await fetch(`${apiUrl}/api/payment/initiate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: crypto.randomUUID().replace(/-/g, ''),
+          orderId: orderIdStr,
           amount: total,
           items: items.map((item) => ({
             productId: item.productId,
@@ -105,7 +106,7 @@ export default function CartPage() {
           subtotal,
           gst,
           discount,
-          redirectUrl: `${window.location.origin}/order-success`,
+          redirectUrl: `${window.location.origin}/order-success/${orderIdStr}`,
           callbackUrl: `${apiUrl}/api/payment/callback`,
           customerPhone: addressData.phone,
           customerEmail: user.email,

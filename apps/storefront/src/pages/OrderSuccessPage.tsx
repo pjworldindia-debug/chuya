@@ -6,18 +6,21 @@ import { CheckCircle, MessageCircle, Phone, Package } from 'lucide-react'
 import { supabase } from '@chuya/shared/supabase'
 import { formatCurrency, formatDate, getEstimatedDeliveryDate, BRAND } from '@chuya/shared/constants'
 import type { Order, OrderItem } from '@chuya/shared/types'
+import { useCartStore } from '../stores/cartStore'
 import Button from '../components/Button'
 
 export default function OrderSuccessPage() {
   const { orderId } = useParams<{ orderId: string }>()
+  const clearCart = useCartStore((s) => s.clearCart)
 
   // Ping API to check and verify PhonePe status
   useEffect(() => {
     if (orderId) {
       const apiUrl = import.meta.env.VITE_API_URL || ''
       fetch(`${apiUrl}/api/payment/status/${orderId}`).catch(console.error)
+      clearCart()
     }
-  }, [orderId])
+  }, [orderId, clearCart])
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order', orderId],

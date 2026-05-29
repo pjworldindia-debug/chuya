@@ -167,9 +167,11 @@ async function checkAndUpdateStatus(orderId: string) {
   })
 
   const phonePeData = await response.json()
+  console.log(`PhonePe Status Response for ${orderId}:`, phonePeData)
   
-  if (phonePeData.state) {
-    const paymentStatus = phonePeData.state === 'COMPLETED' ? 'paid' : phonePeData.state === 'FAILED' ? 'failed' : 'pending'
+  const state = phonePeData.data?.state || phonePeData.state
+  if (state) {
+    const paymentStatus = state === 'COMPLETED' ? 'paid' : state === 'FAILED' ? 'failed' : 'pending'
 
     // Check current status before updating to avoid duplicate decrements
     const { data: currentOrder } = await supabaseAdmin
