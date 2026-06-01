@@ -14,8 +14,11 @@ export default function BannersPage() {
   const [editing, setEditing] = useState<Banner | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [uploadingSecondary, setUploadingSecondary] = useState(false)
   const [imgUrl, setImgUrl] = useState('')
   const [vidUrl, setVidUrl] = useState('')
+  const [secondaryImgUrl, setSecondaryImgUrl] = useState('')
+  const [hasSecondaryImage, setHasSecondaryImage] = useState(false)
 
   const { data: banners, isLoading } = useQuery({
     queryKey: ['admin', 'banners'],
@@ -33,24 +36,28 @@ export default function BannersPage() {
     form.reset({ position: 'hero', text_color: 'light', overlay_opacity: 30, display_order: banners?.length || 0, is_active: false })
     setImgUrl('')
     setVidUrl('')
+    setSecondaryImgUrl('')
+    setHasSecondaryImage(false)
     setDialogOpen(true)
   }
 
   const openEdit = (b: Banner) => {
     setEditing(b)
     form.reset({
-      image_url: b.image_url, video_url: b.video_url || '', position: b.position as 'hero' | 'secondary', title: b.title, subtitle: b.subtitle,
+      image_url: b.image_url, video_url: b.video_url || '', secondary_image_url: b.secondary_image_url || '', position: b.position as 'hero' | 'secondary', title: b.title, subtitle: b.subtitle,
       cta_label: b.cta_label, cta_url: b.cta_url, text_color: b.text_color,
       overlay_opacity: b.overlay_opacity, display_order: b.display_order, is_active: b.is_active,
     })
     setImgUrl(b.image_url)
     setVidUrl(b.video_url || '')
+    setSecondaryImgUrl(b.secondary_image_url || '')
+    setHasSecondaryImage(!!b.secondary_image_url)
     setDialogOpen(true)
   }
 
   const saveMutation = useMutation({
     mutationFn: async (data: BannerFormData) => {
-      const payload = { ...data, image_url: imgUrl, video_url: vidUrl || null }
+      const payload = { ...data, image_url: imgUrl, video_url: vidUrl || null, secondary_image_url: hasSecondaryImage ? (secondaryImgUrl || null) : null }
       if (editing) {
         const { error } = await supabase.from('banners').update(payload).eq('id', editing.id)
         if (error) throw error
@@ -106,6 +113,21 @@ export default function BannersPage() {
       alert(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploadingVideo(false)
+    }
+  }
+
+  const handleSecondaryImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingSecondary(true)
+    try {
+      const url = await uploadImage(file, 'banner-images')
+      setSecondaryImgUrl(url)
+      form.setValue('secondary_image_url', url)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingSecondary(false)
     }
   }
 
@@ -208,6 +230,30 @@ export default function BannersPage() {
                     <option value="story">Our Story</option>
                   </select>
                 </div>
+              </div>
+              
+              {/* Secondary Image Toggle & Upload */}
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <label className="flex items-center gap-2 text-sm font-medium mb-3 cursor-pointer">
+                  <input type="checkbox" checked={hasSecondaryImage} onChange={(e) => setHasSecondaryImage(e.target.checked)} className="accent-chuya" />
+                  Add Secondary / Mobile Image
+                </label>
+                {hasSecondaryImage && (
+                  <div>
+                    {secondaryImgUrl ? (
+                      <div className="relative aspect-[4/5] w-32 rounded overflow-hidden bg-gray-200">
+                        <img src={secondaryImgUrl} alt="Secondary" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => { setSecondaryImgUrl(''); form.setValue('secondary_image_url', '') }} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10">×</button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-4 cursor-pointer hover:border-gray-400 text-sm bg-white">
+                        {uploadingSecondary ? 'Uploading...' : 'Upload Image'}
+                        <input type="file" accept="image/*" onChange={handleSecondaryImgUpload} className="hidden" />
+                      </label>
+                    )}
+                    {form.formState.errors.secondary_image_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.secondary_image_url.message}</p>}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-xs font-medium text-gray-500 uppercase">Title</label><input {...form.register('title')} className="admin-input mt-1" /></div>

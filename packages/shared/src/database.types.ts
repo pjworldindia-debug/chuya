@@ -116,6 +116,7 @@ export type Database = {
         Row: {
           id: string
           image_url: string
+          secondary_image_url: string | null
           video_url: string | null
           position: string
           title: string | null
@@ -133,6 +134,7 @@ export type Database = {
         Insert: {
           id?: string
           image_url: string
+          secondary_image_url?: string | null
           video_url?: string | null
           position?: string
           title?: string | null
@@ -150,6 +152,7 @@ export type Database = {
         Update: {
           id?: string
           image_url?: string
+          secondary_image_url?: string | null
           video_url?: string | null
           position?: string
           title?: string | null

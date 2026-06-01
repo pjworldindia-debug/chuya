@@ -113,7 +113,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
         type: 'PG_CHECKOUT',
         message: `Order ${orderId.slice(0, 8)}`,
         merchantUrls: {
-          redirectUrl: `${redirectUrl}/${orderId}`, // User goes here after payment
+          redirectUrl: redirectUrl, // User goes here after payment
           callbackUrl: callbackUrl // Server-to-server webhook (optional in V2 if we use status check)
         }
       }
@@ -154,6 +154,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
 })
 
 async function checkAndUpdateStatus(orderId: string) {
+  const supabaseAdmin = getSupabaseAdmin()
   const accessToken = await getPhonePeToken()
   
   // Status endpoint: /apis/pg/v3/transaction/{merchantId}/{merchantOrderId}/status

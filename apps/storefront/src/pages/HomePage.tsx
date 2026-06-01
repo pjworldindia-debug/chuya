@@ -167,11 +167,14 @@ export default function HomePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <img
-                      src={banner.image_url}
-                      alt={banner.title || 'CHUYA'}
-                      className="w-full h-full object-cover"
-                    />
+                    <picture className="w-full h-full">
+                      {banner.secondary_image_url && <source media="(max-width: 768px)" srcSet={banner.secondary_image_url} />}
+                      <img
+                        src={banner.image_url}
+                        alt={banner.title || 'CHUYA'}
+                        className="w-full h-full object-cover"
+                      />
+                    </picture>
                   )}
                   {/* Overlay */}
                   <div
@@ -276,11 +279,14 @@ export default function HomePage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <img
-                src={secondaryBanners[0].image_url}
-                alt={secondaryBanners[0].title || 'CHUYA Collection'}
-                className="w-full h-full object-cover"
-              />
+              <picture className="w-full h-full">
+                {secondaryBanners[0].secondary_image_url && <source media="(max-width: 768px)" srcSet={secondaryBanners[0].secondary_image_url} />}
+                <img
+                  src={secondaryBanners[0].image_url}
+                  alt={secondaryBanners[0].title || 'CHUYA Collection'}
+                  className="w-full h-full object-cover"
+                />
+              </picture>
             )}
             <div
               className="absolute inset-0"
@@ -377,11 +383,14 @@ export default function HomePage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <img
-                    src={storyBanners[0].image_url}
-                    alt={storyBanners[0].title || 'Our Story'}
-                    className="w-full h-full object-cover"
-                  />
+                  <picture className="w-full h-full">
+                    {storyBanners[0].secondary_image_url && <source media="(max-width: 768px)" srcSet={storyBanners[0].secondary_image_url} />}
+                    <img
+                      src={storyBanners[0].image_url}
+                      alt={storyBanners[0].title || 'Our Story'}
+                      className="w-full h-full object-cover"
+                    />
+                  </picture>
                 )}
                 <div
                   className="absolute inset-0"
