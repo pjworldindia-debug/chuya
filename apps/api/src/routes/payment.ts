@@ -296,12 +296,10 @@ router.all('/redirect/:orderId', async (req: Request, res: Response) => {
     console.error('Redirect status check error:', error);
   }
 
-  if (frontendUrl) {
-    res.redirect(302, frontendUrl);
-  } else {
-    const fallbackBase = process.env.STOREFRONT_URL || 'https://chuya.in';
-    res.redirect(302, `${fallbackBase}/order-success/${orderId}`);
-  }
+  // Force the absolute URL, completely ignoring any frontendUrl query parameter.
+  // PhonePe often mangles query parameters by appending the transaction ID to the end of the URL.
+  const fallbackBase = process.env.STOREFRONT_URL || 'https://chuya.in';
+  res.redirect(302, `${fallbackBase}/order-success/${orderId}`);
 })
 
 export { router as paymentRouter }
