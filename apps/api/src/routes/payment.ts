@@ -26,8 +26,8 @@ const URLS = {
     ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay' 
     : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay',
   status: IS_PROD 
-    ? 'https://api.phonepe.com/apis/pg/v3/transaction' 
-    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/v3/transaction'
+    ? 'https://api.phonepe.com/apis/pg/checkout/v2/order' 
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order'
 }
 
 /**
@@ -157,8 +157,8 @@ async function checkAndUpdateStatus(orderId: string) {
   const supabaseAdmin = getSupabaseAdmin()
   const accessToken = await getPhonePeToken()
   
-  // Status endpoint: /apis/pg/v3/transaction/{merchantId}/{merchantOrderId}/status
-  const statusUrl = `${URLS.status}/${PHONEPE_MERCHANT_ID}/${orderId}/status`
+  // Status endpoint: /apis/pg/checkout/v2/order/{merchantOrderId}/status
+  const statusUrl = `${URLS.status}/${orderId}/status`
 
   const response = await fetch(statusUrl, {
     method: 'GET',
