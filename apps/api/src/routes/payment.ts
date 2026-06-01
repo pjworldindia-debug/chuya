@@ -281,4 +281,26 @@ router.post('/callback', async (req: Request, res: Response) => {
   }
 })
 
+/**
+ * ALL /api/payment/redirect/:orderId
+ * Handles PhonePe redirect (which might be POST) and converts it to a GET redirect to frontend
+ */
+router.all('/redirect/:orderId', async (req: Request, res: Response) => {
+  const { orderId } = req.params;
+  const frontendUrl = req.query.frontend as string;
+
+  try {
+    // Proactively check status before redirecting to ensure it's updated immediately
+    await checkAndUpdateStatus(orderId);
+  } catch (error) {
+    console.error('Redirect status check error:', error);
+  }
+
+  if (frontendUrl) {
+    res.redirect(302, frontendUrl);
+  } else {
+    res.redirect(302, `/order-success/${orderId}`);
+  }
+})
+
 export { router as paymentRouter }

@@ -106,7 +106,7 @@ export default function CartPage() {
           subtotal,
           gst,
           discount,
-          redirectUrl: `${window.location.origin}/order-success/${orderIdStr}`,
+          redirectUrl: `${apiUrl}/api/payment/redirect/${orderIdStr}?frontend=${encodeURIComponent(window.location.origin + '/order-success/' + orderIdStr)}`,
           callbackUrl: `${apiUrl}/api/payment/callback`,
           customerPhone: addressData.phone,
           customerEmail: user.email,
