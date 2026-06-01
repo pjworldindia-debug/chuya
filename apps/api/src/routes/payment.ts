@@ -299,7 +299,8 @@ router.all('/redirect/:orderId', async (req: Request, res: Response) => {
   if (frontendUrl) {
     res.redirect(302, frontendUrl);
   } else {
-    res.redirect(302, `/order-success/${orderId}`);
+    const fallbackBase = process.env.STOREFRONT_URL || 'https://chuya.in';
+    res.redirect(302, `${fallbackBase}/order-success/${orderId}`);
   }
 })
 
