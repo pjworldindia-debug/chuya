@@ -112,6 +112,7 @@ export default function Navbar() {
 
             <Link
               to={user ? '/account' : '/auth'}
+              state={!user ? { from: location.pathname } : undefined}
               className="p-1 text-chuya/70 hover:text-chuya transition-colors"
               aria-label="Account"
               id="nav-account"
@@ -227,7 +228,7 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="h-px bg-chuya/10 my-4" />
-            <Link to={user ? '/account' : '/auth'} className="text-sm tracking-wider uppercase text-muted">
+            <Link to={user ? '/account' : '/auth'} state={!user ? { from: location.pathname } : undefined} className="text-sm tracking-wider uppercase text-muted">
               {user ? 'My Account' : 'Sign In'}
             </Link>
           </div>

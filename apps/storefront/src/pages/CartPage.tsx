@@ -77,7 +77,7 @@ export default function CartPage() {
 
   const onPlaceOrder = async (addressData: AddressFormData) => {
     if (!user) {
-      navigate('/auth')
+      navigate('/auth', { state: { from: '/cart' } })
       return
     }
     if (items.length === 0) return
@@ -289,7 +289,7 @@ export default function CartPage() {
 
                   {!user && (
                     <p className="text-center text-xs text-muted mt-2">
-                      <Link to="/auth" className="underline hover:text-chuya">Sign in</Link> to place your order
+                      <Link to="/auth" state={{ from: '/cart' }} className="underline hover:text-chuya">Sign in</Link> to place your order
                     </p>
                   )}
 
