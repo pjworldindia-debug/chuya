@@ -157,15 +157,23 @@ export default function HomePage() {
             {heroBanners.map((banner) => (
               <SwiperSlide key={banner.id}>
                 <div className="relative w-full h-full">
-                  {banner.video_url ? (
-                    <video
-                      src={banner.video_url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
+                  {banner.video_url || banner.mobile_video_url ? (
+                    <>
+                      {banner.video_url && (
+                        <video
+                          src={banner.video_url}
+                          autoPlay loop muted playsInline
+                          className={`w-full h-full object-cover ${banner.mobile_video_url ? 'hidden md:block' : ''}`}
+                        />
+                      )}
+                      {banner.mobile_video_url && (
+                        <video
+                          src={banner.mobile_video_url}
+                          autoPlay loop muted playsInline
+                          className={`w-full h-full object-cover ${banner.video_url ? 'md:hidden' : ''}`}
+                        />
+                      )}
+                    </>
                   ) : (
                     <picture className="w-full h-full">
                       {banner.secondary_image_url && <source media="(max-width: 768px)" srcSet={banner.secondary_image_url} />}
@@ -269,15 +277,23 @@ export default function HomePage() {
       {secondaryBanners.length > 0 && (
         <section className="relative w-full h-[50vh] md:h-[60vh] mt-16 md:mt-24">
           <div className="relative w-full h-full">
-            {secondaryBanners[0].video_url ? (
-              <video
-                src={secondaryBanners[0].video_url}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
+            {secondaryBanners[0].video_url || secondaryBanners[0].mobile_video_url ? (
+              <>
+                {secondaryBanners[0].video_url && (
+                  <video
+                    src={secondaryBanners[0].video_url}
+                    autoPlay loop muted playsInline
+                    className={`w-full h-full object-cover ${secondaryBanners[0].mobile_video_url ? 'hidden md:block' : ''}`}
+                  />
+                )}
+                {secondaryBanners[0].mobile_video_url && (
+                  <video
+                    src={secondaryBanners[0].mobile_video_url}
+                    autoPlay loop muted playsInline
+                    className={`w-full h-full object-cover ${secondaryBanners[0].video_url ? 'md:hidden' : ''}`}
+                  />
+                )}
+              </>
             ) : (
               <picture className="w-full h-full">
                 {secondaryBanners[0].secondary_image_url && <source media="(max-width: 768px)" srcSet={secondaryBanners[0].secondary_image_url} />}
@@ -373,16 +389,24 @@ export default function HomePage() {
           <div className="relative h-[400px] lg:h-auto overflow-hidden">
             {storyBanners.length > 0 ? (
               <>
-                {storyBanners[0].video_url ? (
-                  <video
-                    src={storyBanners[0].video_url}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
+                {storyBanners[0].video_url || storyBanners[0].mobile_video_url ? (
+                <>
+                  {storyBanners[0].video_url && (
+                    <video
+                      src={storyBanners[0].video_url}
+                      autoPlay loop muted playsInline
+                      className={`w-full h-[50vh] md:h-[70vh] object-cover ${storyBanners[0].mobile_video_url ? 'hidden md:block' : ''}`}
+                    />
+                  )}
+                  {storyBanners[0].mobile_video_url && (
+                    <video
+                      src={storyBanners[0].mobile_video_url}
+                      autoPlay loop muted playsInline
+                      className={`w-full h-[50vh] md:h-[70vh] object-cover ${storyBanners[0].video_url ? 'md:hidden' : ''}`}
+                    />
+                  )}
+                </>
+              ) : (
                   <picture className="w-full h-full">
                     {storyBanners[0].secondary_image_url && <source media="(max-width: 768px)" srcSet={storyBanners[0].secondary_image_url} />}
                     <img

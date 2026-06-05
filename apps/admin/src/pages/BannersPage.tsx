@@ -17,6 +17,7 @@ export default function BannersPage() {
   const [uploadingSecondary, setUploadingSecondary] = useState(false)
   const [imgUrl, setImgUrl] = useState('')
   const [vidUrl, setVidUrl] = useState('')
+  const [mobileVidUrl, setMobileVidUrl] = useState('')
   const [secondaryImgUrl, setSecondaryImgUrl] = useState('')
   const [hasSecondaryImage, setHasSecondaryImage] = useState(false)
 
@@ -36,6 +37,7 @@ export default function BannersPage() {
     form.reset({ position: 'hero', text_color: 'light', overlay_opacity: 30, display_order: banners?.length || 0, is_active: false })
     setImgUrl('')
     setVidUrl('')
+    setMobileVidUrl('')
     setSecondaryImgUrl('')
     setHasSecondaryImage(false)
     setDialogOpen(true)
@@ -44,12 +46,13 @@ export default function BannersPage() {
   const openEdit = (b: Banner) => {
     setEditing(b)
     form.reset({
-      image_url: b.image_url, video_url: b.video_url || '', secondary_image_url: b.secondary_image_url || '', position: b.position as 'hero' | 'secondary', title: b.title, subtitle: b.subtitle,
+      image_url: b.image_url, video_url: b.video_url || '', mobile_video_url: b.mobile_video_url || '', secondary_image_url: b.secondary_image_url || '', position: b.position as 'hero' | 'secondary', title: b.title, subtitle: b.subtitle,
       cta_label: b.cta_label, cta_url: b.cta_url, text_color: b.text_color,
       overlay_opacity: b.overlay_opacity, display_order: b.display_order, is_active: b.is_active,
     })
     setImgUrl(b.image_url)
     setVidUrl(b.video_url || '')
+    setMobileVidUrl(b.mobile_video_url || '')
     setSecondaryImgUrl(b.secondary_image_url || '')
     setHasSecondaryImage(!!b.secondary_image_url)
     setDialogOpen(true)
@@ -57,7 +60,7 @@ export default function BannersPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: BannerFormData) => {
-      const payload = { ...data, image_url: imgUrl, video_url: vidUrl || null, secondary_image_url: hasSecondaryImage ? (secondaryImgUrl || null) : null }
+      const payload = { ...data, image_url: imgUrl, video_url: vidUrl || null, mobile_video_url: mobileVidUrl || null, secondary_image_url: hasSecondaryImage ? (secondaryImgUrl || null) : null }
       if (editing) {
         const { error } = await supabase.from('banners').update(payload).eq('id', editing.id)
         if (error) throw error
@@ -109,6 +112,21 @@ export default function BannersPage() {
       const url = await uploadFile(file, 'banner-images')
       setVidUrl(url)
       form.setValue('video_url', url)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingVideo(false)
+    }
+  }
+
+  const handleMobileVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingVideo(true)
+    try {
+      const url = await uploadFile(file, 'banner-images')
+      setMobileVidUrl(url)
+      form.setValue('mobile_video_url', url)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -222,6 +240,23 @@ export default function BannersPage() {
                   )}
                   {form.formState.errors.video_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.video_url.message}</p>}
                 </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Mobile Video (Optional)</label>
+                  {mobileVidUrl ? (
+                    <div className="mt-2 relative aspect-[9/16] w-32 rounded overflow-hidden bg-black">
+                      <video src={mobileVidUrl} className="w-full h-full object-cover" controls />
+                      <button type="button" onClick={() => { setMobileVidUrl(''); form.setValue('mobile_video_url', '') }} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10">×</button>
+                    </div>
+                  ) : (
+                    <label className="mt-2 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-3 cursor-pointer hover:border-gray-400 text-sm">
+                      {uploadingVideo ? 'Uploading...' : 'Upload Mobile Video'}
+                      <input type="file" accept="video/*" onChange={handleMobileVideoUpload} className="hidden" />
+                    </label>
+                  )}
+                  {form.formState.errors.mobile_video_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.mobile_video_url.message}</p>}
+                </div>
+
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">Position</label>
                   <select {...form.register('position')} className="admin-input mt-1">

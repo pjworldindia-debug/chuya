@@ -118,6 +118,7 @@ export type Database = {
           image_url: string
           secondary_image_url: string | null
           video_url: string | null
+          mobile_video_url: string | null
           position: string
           title: string | null
           subtitle: string | null
@@ -136,6 +137,7 @@ export type Database = {
           image_url: string
           secondary_image_url?: string | null
           video_url?: string | null
+          mobile_video_url?: string | null
           position?: string
           title?: string | null
           subtitle?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           image_url?: string
           secondary_image_url?: string | null
           video_url?: string | null
+          mobile_video_url?: string | null
           position?: string
           title?: string | null
           subtitle?: string | null
