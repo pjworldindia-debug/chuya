@@ -157,32 +157,22 @@ export default function HomePage() {
             {heroBanners.map((banner) => (
               <SwiperSlide key={banner.id}>
                 <div className="relative w-full h-full">
-                  {banner.video_url || banner.mobile_video_url ? (
-                    <>
-                      {banner.video_url && (
-                        <video
-                          src={banner.video_url}
-                          autoPlay loop muted playsInline
-                          className={`w-full h-full object-cover ${banner.mobile_video_url ? 'hidden md:block' : ''}`}
-                        />
-                      )}
-                      {banner.mobile_video_url && (
-                        <video
-                          src={banner.mobile_video_url}
-                          autoPlay loop muted playsInline
-                          className={`w-full h-full object-cover ${banner.video_url ? 'md:hidden' : ''}`}
-                        />
-                      )}
-                    </>
+                  {/* Desktop Asset */}
+                  {banner.video_url ? (
+                    <video src={banner.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover hidden md:block" />
                   ) : (
-                    <picture className="w-full h-full">
-                      {banner.secondary_image_url && <source media="(max-width: 768px)" srcSet={banner.secondary_image_url} />}
-                      <img
-                        src={banner.image_url}
-                        alt={banner.title || 'CHUYA'}
-                        className="w-full h-full object-cover"
-                      />
-                    </picture>
+                    <img src={banner.image_url} alt={banner.title || 'CHUYA'} className="w-full h-full object-cover hidden md:block" />
+                  )}
+
+                  {/* Mobile Asset */}
+                  {banner.mobile_video_url ? (
+                    <video src={banner.mobile_video_url} autoPlay loop muted playsInline className="w-full h-full object-cover block md:hidden" />
+                  ) : banner.video_url ? (
+                    <video src={banner.video_url} autoPlay loop muted playsInline className="w-full h-full object-cover block md:hidden" />
+                  ) : banner.secondary_image_url ? (
+                    <img src={banner.secondary_image_url} alt={banner.title || 'CHUYA'} className="w-full h-full object-cover block md:hidden" />
+                  ) : (
+                    <img src={banner.image_url} alt={banner.title || 'CHUYA'} className="w-full h-full object-cover block md:hidden" />
                   )}
                   {/* Overlay */}
                   <div
@@ -277,32 +267,22 @@ export default function HomePage() {
       {secondaryBanners.length > 0 && (
         <section className="relative w-full h-[50vh] md:h-[60vh] mt-16 md:mt-24">
           <div className="relative w-full h-full">
-            {secondaryBanners[0].video_url || secondaryBanners[0].mobile_video_url ? (
-              <>
-                {secondaryBanners[0].video_url && (
-                  <video
-                    src={secondaryBanners[0].video_url}
-                    autoPlay loop muted playsInline
-                    className={`w-full h-full object-cover ${secondaryBanners[0].mobile_video_url ? 'hidden md:block' : ''}`}
-                  />
-                )}
-                {secondaryBanners[0].mobile_video_url && (
-                  <video
-                    src={secondaryBanners[0].mobile_video_url}
-                    autoPlay loop muted playsInline
-                    className={`w-full h-full object-cover ${secondaryBanners[0].video_url ? 'md:hidden' : ''}`}
-                  />
-                )}
-              </>
+            {/* Desktop Asset */}
+            {secondaryBanners[0].video_url ? (
+              <video src={secondaryBanners[0].video_url} autoPlay loop muted playsInline className="w-full h-full object-cover hidden md:block" />
             ) : (
-              <picture className="w-full h-full">
-                {secondaryBanners[0].secondary_image_url && <source media="(max-width: 768px)" srcSet={secondaryBanners[0].secondary_image_url} />}
-                <img
-                  src={secondaryBanners[0].image_url}
-                  alt={secondaryBanners[0].title || 'CHUYA Collection'}
-                  className="w-full h-full object-cover"
-                />
-              </picture>
+              <img src={secondaryBanners[0].image_url} alt={secondaryBanners[0].title || 'CHUYA'} className="w-full h-full object-cover hidden md:block" />
+            )}
+
+            {/* Mobile Asset */}
+            {secondaryBanners[0].mobile_video_url ? (
+              <video src={secondaryBanners[0].mobile_video_url} autoPlay loop muted playsInline className="w-full h-full object-cover block md:hidden" />
+            ) : secondaryBanners[0].video_url ? (
+              <video src={secondaryBanners[0].video_url} autoPlay loop muted playsInline className="w-full h-full object-cover block md:hidden" />
+            ) : secondaryBanners[0].secondary_image_url ? (
+              <img src={secondaryBanners[0].secondary_image_url} alt={secondaryBanners[0].title || 'CHUYA'} className="w-full h-full object-cover block md:hidden" />
+            ) : (
+              <img src={secondaryBanners[0].image_url} alt={secondaryBanners[0].title || 'CHUYA'} className="w-full h-full object-cover block md:hidden" />
             )}
             <div
               className="absolute inset-0"
@@ -389,32 +369,22 @@ export default function HomePage() {
           <div className="relative h-[400px] lg:h-auto overflow-hidden">
             {storyBanners.length > 0 ? (
               <>
-                {storyBanners[0].video_url || storyBanners[0].mobile_video_url ? (
-                <>
-                  {storyBanners[0].video_url && (
-                    <video
-                      src={storyBanners[0].video_url}
-                      autoPlay loop muted playsInline
-                      className={`w-full h-[50vh] md:h-[70vh] object-cover ${storyBanners[0].mobile_video_url ? 'hidden md:block' : ''}`}
-                    />
-                  )}
-                  {storyBanners[0].mobile_video_url && (
-                    <video
-                      src={storyBanners[0].mobile_video_url}
-                      autoPlay loop muted playsInline
-                      className={`w-full h-[50vh] md:h-[70vh] object-cover ${storyBanners[0].video_url ? 'md:hidden' : ''}`}
-                    />
-                  )}
-                </>
-              ) : (
-                  <picture className="w-full h-full">
-                    {storyBanners[0].secondary_image_url && <source media="(max-width: 768px)" srcSet={storyBanners[0].secondary_image_url} />}
-                    <img
-                      src={storyBanners[0].image_url}
-                      alt={storyBanners[0].title || 'Our Story'}
-                      className="w-full h-full object-cover"
-                    />
-                  </picture>
+                {/* Desktop Asset */}
+                {storyBanners[0].video_url ? (
+                  <video src={storyBanners[0].video_url} autoPlay loop muted playsInline className="w-full h-[50vh] md:h-[70vh] object-cover hidden md:block" />
+                ) : (
+                  <img src={storyBanners[0].image_url} alt={storyBanners[0].title || 'CHUYA'} className="w-full h-[50vh] md:h-[70vh] object-cover hidden md:block" />
+                )}
+
+                {/* Mobile Asset */}
+                {storyBanners[0].mobile_video_url ? (
+                  <video src={storyBanners[0].mobile_video_url} autoPlay loop muted playsInline className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                ) : storyBanners[0].video_url ? (
+                  <video src={storyBanners[0].video_url} autoPlay loop muted playsInline className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                ) : storyBanners[0].secondary_image_url ? (
+                  <img src={storyBanners[0].secondary_image_url} alt={storyBanners[0].title || 'CHUYA'} className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                ) : (
+                  <img src={storyBanners[0].image_url} alt={storyBanners[0].title || 'CHUYA'} className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
                 )}
                 <div
                   className="absolute inset-0"
