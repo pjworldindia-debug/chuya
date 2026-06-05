@@ -242,22 +242,6 @@ export default function BannersPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Mobile Video (Optional)</label>
-                  {mobileVidUrl ? (
-                    <div className="mt-2 relative aspect-[9/16] w-32 rounded overflow-hidden bg-black">
-                      <video src={mobileVidUrl} className="w-full h-full object-cover" controls />
-                      <button type="button" onClick={() => { setMobileVidUrl(''); form.setValue('mobile_video_url', '') }} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10">×</button>
-                    </div>
-                  ) : (
-                    <label className="mt-2 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-3 cursor-pointer hover:border-gray-400 text-sm">
-                      {uploadingVideo ? 'Uploading...' : 'Upload Mobile Video'}
-                      <input type="file" accept="video/*" onChange={handleMobileVideoUpload} className="hidden" />
-                    </label>
-                  )}
-                  {form.formState.errors.mobile_video_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.mobile_video_url.message}</p>}
-                </div>
-
-                <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">Position</label>
                   <select {...form.register('position')} className="admin-input mt-1">
                     <option value="hero">Hero (Top)</option>
@@ -267,26 +251,45 @@ export default function BannersPage() {
                 </div>
               </div>
               
-              {/* Secondary Image Toggle & Upload */}
+              {/* Secondary Media Toggle & Upload */}
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <label className="flex items-center gap-2 text-sm font-medium mb-3 cursor-pointer">
                   <input type="checkbox" checked={hasSecondaryImage} onChange={(e) => setHasSecondaryImage(e.target.checked)} className="accent-chuya" />
-                  Add Secondary / Mobile Image
+                  Add Secondary / Mobile Media (Image or Video)
                 </label>
                 {hasSecondaryImage && (
-                  <div>
-                    {secondaryImgUrl ? (
-                      <div className="relative aspect-[4/5] w-32 rounded overflow-hidden bg-gray-200">
-                        <img src={secondaryImgUrl} alt="Secondary" className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => { setSecondaryImgUrl(''); form.setValue('secondary_image_url', '') }} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10">×</button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-4 cursor-pointer hover:border-gray-400 text-sm bg-white">
-                        {uploadingSecondary ? 'Uploading...' : 'Upload Image'}
-                        <input type="file" accept="image/*" onChange={handleSecondaryImgUpload} className="hidden" />
-                      </label>
-                    )}
-                    {form.formState.errors.secondary_image_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.secondary_image_url.message}</p>}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase block mb-2">Mobile Image</label>
+                      {secondaryImgUrl ? (
+                        <div className="relative aspect-[4/5] w-32 rounded overflow-hidden bg-gray-200">
+                          <img src={secondaryImgUrl} alt="Secondary" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => { setSecondaryImgUrl(''); form.setValue('secondary_image_url', '') }} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10">×</button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-4 cursor-pointer hover:border-gray-400 text-sm bg-white">
+                          {uploadingSecondary ? 'Uploading...' : 'Upload Image'}
+                          <input type="file" accept="image/*" onChange={handleSecondaryImgUpload} className="hidden" />
+                        </label>
+                      )}
+                      {form.formState.errors.secondary_image_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.secondary_image_url.message}</p>}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase block mb-2">Mobile Video</label>
+                      {mobileVidUrl ? (
+                        <div className="relative aspect-[9/16] w-32 rounded overflow-hidden bg-black">
+                          <video src={mobileVidUrl} className="w-full h-full object-cover" controls />
+                          <button type="button" onClick={() => { setMobileVidUrl(''); form.setValue('mobile_video_url', '') }} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center z-10">×</button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-4 cursor-pointer hover:border-gray-400 text-sm bg-white">
+                          {uploadingVideo ? 'Uploading...' : 'Upload Video'}
+                          <input type="file" accept="video/*" onChange={handleMobileVideoUpload} className="hidden" />
+                        </label>
+                      )}
+                      {form.formState.errors.mobile_video_url && <p className="text-red-500 text-xs mt-1">{form.formState.errors.mobile_video_url.message}</p>}
+                    </div>
                   </div>
                 )}
               </div>
