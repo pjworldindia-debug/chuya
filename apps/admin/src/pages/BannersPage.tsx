@@ -119,10 +119,12 @@ export default function BannersPage() {
     }
   }
 
+  const [uploadingMobileVideo, setUploadingMobileVideo] = useState(false)
+
   const handleMobileVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadingVideo(true)
+    setUploadingMobileVideo(true)
     try {
       const url = await uploadFile(file, 'banner-images')
       setMobileVidUrl(url)
@@ -130,7 +132,7 @@ export default function BannersPage() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Upload failed')
     } finally {
-      setUploadingVideo(false)
+      setUploadingMobileVideo(false)
     }
   }
 
@@ -284,7 +286,7 @@ export default function BannersPage() {
                         </div>
                       ) : (
                         <label className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg py-4 cursor-pointer hover:border-gray-400 text-sm bg-white">
-                          {uploadingVideo ? 'Uploading...' : 'Upload Video'}
+                          {uploadingMobileVideo ? 'Uploading...' : 'Upload Video'}
                           <input type="file" accept="video/*" onChange={handleMobileVideoUpload} className="hidden" />
                         </label>
                       )}
