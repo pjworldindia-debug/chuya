@@ -16,6 +16,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const ReturnsPage = lazy(() => import('./pages/ReturnsPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 import { useAuthStore } from './stores/authStore'
+import { useCartStore } from './stores/cartStore'
 import { supabase } from '@chuya/shared/supabase'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
               phone: profile?.phone || null,
               role: (profile?.role as 'customer' | 'owner') || 'customer',
             })
+            useCartStore.getState().syncWithBackend()
             setLoading(false)
           })
       } else {
@@ -65,6 +67,7 @@ export default function App() {
           phone: profile?.phone || null,
           role: (profile?.role as 'customer' | 'owner') || 'customer',
         })
+        useCartStore.getState().syncWithBackend()
       } else {
         setUser(null)
       }
