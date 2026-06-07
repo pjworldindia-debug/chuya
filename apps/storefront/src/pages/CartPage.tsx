@@ -23,8 +23,8 @@ export default function CartPage() {
 
   const subtotal = getSubtotal()
   const discountedSubtotal = Math.max(0, subtotal - discount)
-  const gst = Math.round(discountedSubtotal * GST_RATE)
-  const total = discountedSubtotal + gst
+  const gst = 0
+  const total = discountedSubtotal
 
   const {
     register,
@@ -222,13 +222,18 @@ export default function CartPage() {
                 <h2 className="text-xs tracking-[0.2em] uppercase text-muted mb-6">Order Summary</h2>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between"><span className="text-muted">Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted">GST (18%)</span><span>{formatCurrency(gst)}</span></div>
                   {discount > 0 && (
                     <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatCurrency(discount)}</span></div>
                   )}
                   <div className="flex justify-between"><span className="text-muted">Shipping</span><span className="text-green-600">Free</span></div>
                   <div className="h-px bg-chuya/10 my-2" />
-                  <div className="flex justify-between text-lg font-medium"><span>Total</span><span>{formatCurrency(total)}</span></div>
+                  <div className="flex justify-between font-serif text-lg tracking-wide pt-2">
+                    <span>Total</span>
+                    <div className="text-right">
+                      <div>{formatCurrency(total)}</div>
+                      <div className="text-[10px] text-muted font-sans font-normal tracking-normal mt-0.5">Inclusive of all taxes</div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="h-px bg-chuya/10 my-6" />

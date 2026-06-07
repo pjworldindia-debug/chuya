@@ -120,7 +120,6 @@ export default function OrdersPage() {
                           </div>
                           <div className="mt-3 pt-3 border-t border-gray-200 space-y-1 text-sm">
                             <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">GST</span><span>{formatCurrency(order.gst)}</span></div>
                             {order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatCurrency(order.discount)}</span></div>}
                             <div className="flex justify-between font-medium"><span>Total</span><span>{formatCurrency(order.total)}</span></div>
                           </div>
