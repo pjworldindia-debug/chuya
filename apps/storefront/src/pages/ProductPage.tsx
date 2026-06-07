@@ -254,7 +254,7 @@ export default function ProductPage() {
                       const isExternal = variant.url.startsWith('http')
                       const btnClass = "px-4 py-2 border border-chuya/20 hover:border-chuya rounded-md text-sm transition-colors"
                       return isExternal ? (
-                        <a key={i} href={variant.url} target="_blank" rel="noopener noreferrer" className={btnClass}>
+                        <a key={i} href={variant.url} className={btnClass}>
                           {variant.name}
                         </a>
                       ) : (

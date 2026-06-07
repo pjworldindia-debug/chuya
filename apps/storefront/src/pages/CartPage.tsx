@@ -22,8 +22,9 @@ export default function CartPage() {
   const [orderLoading, setOrderLoading] = useState(false)
 
   const subtotal = getSubtotal()
-  const gst = Math.round(subtotal * GST_RATE)
-  const total = subtotal + gst - discount
+  const discountedSubtotal = Math.max(0, subtotal - discount)
+  const gst = Math.round(discountedSubtotal * GST_RATE)
+  const total = discountedSubtotal + gst
 
   const {
     register,
