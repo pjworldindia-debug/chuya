@@ -149,11 +149,14 @@ export default function ShopPage() {
   return (
     <>
       <Helmet>
-        <title>{selectedCategory ? `${selectedCategory.name} — CHUYA` : 'Shop — CHUYA'}</title>
+        <title>{selectedCategory ? `${selectedCategory.name} — Luxury Bags | CHUYA` : 'Shop Luxury Bags & Handbags — CHUYA'}</title>
         <meta
           name="description"
-          content="Browse CHUYA's collection of luxury handcrafted Indian handbags. Filter by category, price, and more."
+          content="Browse CHUYA's collection of luxury handcrafted Indian handbags. Shop premium leather bags, totes, and clutches."
         />
+        <meta name="keywords" content="buy luxury bags online, luxury handbags india, premium leather bags, designer bags, chuya collection" />
+        <meta property="og:title" content={selectedCategory ? `${selectedCategory.name} — Luxury Bags | CHUYA` : 'Shop Luxury Bags & Handbags — CHUYA'} />
+        <meta property="og:description" content="Browse CHUYA's collection of luxury handcrafted Indian handbags. Shop premium leather bags, totes, and clutches." />
       </Helmet>
 
       <div className="section min-h-screen" id="shop-page">

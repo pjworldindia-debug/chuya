@@ -136,11 +136,15 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>CHUYA — Luxury Indian Handbags</title>
+        <title>CHUYA — Luxury Indian Handbags & Premium Leather Bags</title>
         <meta
           name="description"
-          content="Discover CHUYA's luxury handcrafted Indian handbags. Each piece celebrates the art of Indian craftsmanship with the finest materials."
+          content="Discover CHUYA's luxury handcrafted Indian handbags. Each piece celebrates the art of Indian craftsmanship with the finest premium materials. Shop luxury bags online."
         />
+        <meta name="keywords" content="luxury bags, luxury handbags, premium leather bags, indian craftsmanship, designer bags, chuya, chuya bags, handcrafted bags" />
+        <meta property="og:title" content="CHUYA — Luxury Indian Handbags" />
+        <meta property="og:description" content="Discover CHUYA's luxury handcrafted Indian handbags. Each piece celebrates the art of Indian craftsmanship with the finest premium materials." />
+        <meta property="og:url" content="https://chuya.in" />
       </Helmet>
 
       {/* ── Hero Banner Carousel ── */}

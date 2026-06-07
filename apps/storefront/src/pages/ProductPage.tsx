@@ -167,6 +167,32 @@ export default function ProductPage() {
         <meta property="og:title" content={product.name} />
         <meta property="og:description" content={product.seo_description || product.description || ''} />
         {images[0] && <meta property="og:image" content={images[0]} />}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": product.name,
+            "image": images,
+            "description": product.seo_description || product.description,
+            "sku": product.slug,
+            "brand": {
+              "@type": "Brand",
+              "name": "CHUYA"
+            },
+            "offers": {
+              "@type": "Offer",
+              "url": `https://chuya.in/product/${product.slug}`,
+              "priceCurrency": "INR",
+              "price": product.price,
+              "itemCondition": "https://schema.org/NewCondition",
+              "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              "seller": {
+                "@type": "Organization",
+                "name": "CHUYA"
+              }
+            }
+          })}
+        </script>
       </Helmet>
 
       <div className="section" id="product-detail">
