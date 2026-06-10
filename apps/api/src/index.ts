@@ -7,6 +7,7 @@ import { emailRouter } from './routes/email.js'
 import { storeRouter } from './routes/store.js'
 import { uploadRouter } from './routes/upload.js'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 
@@ -65,8 +66,14 @@ app.use('/api/email', strictLimiter, emailRouter)
 app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
 
+// Resolve absolute path to uploads folder
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+// Since index.js is built to dist/index.js, the uploads folder is one level up
+const uploadsPath = path.join(__dirname, '../uploads')
+
 // Serve uploads folder as static files
-app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads')))
+app.use('/api/uploads', express.static(uploadsPath))
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

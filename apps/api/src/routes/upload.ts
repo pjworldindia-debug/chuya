@@ -2,12 +2,17 @@ import { Router } from 'express'
 import multer from 'multer'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import crypto from 'crypto'
 
 const router = Router()
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'uploads')
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+// Since upload.js is built to dist/routes/upload.js, uploads is two levels up
+const uploadsDir = path.join(__dirname, '../../uploads')
+
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
