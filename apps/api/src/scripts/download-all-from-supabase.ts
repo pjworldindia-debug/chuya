@@ -19,7 +19,6 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
 
-const BUCKETS = ['product-images', 'banner-images', 'category-images', 'images'] // Common bucket names
 
 async function downloadFilesFromBucket(bucketName: string) {
   console.log(`\nChecking bucket: ${bucketName}...`)
@@ -77,8 +76,22 @@ async function run() {
   console.log('Starting full download from Supabase Storage to local VPS...')
   console.log(`Saving files to: ${uploadsDir}\n`)
   
-  for (const bucket of BUCKETS) {
-    await downloadFilesFromBucket(bucket)
+  // Dynamically get all buckets!
+  const { data: buckets, error } = await supabaseAdmin.storage.listBuckets()
+  if (error) {
+    console.error('Failed to list buckets:', error)
+    return
+  }
+  
+  if (!buckets || buckets.length === 0) {
+    console.log('No buckets found in Supabase!')
+    return
+  }
+
+  console.log(`Found ${buckets.length} buckets in Supabase:`, buckets.map(b => b.name).join(', '))
+  
+  for (const bucket of buckets) {
+    await downloadFilesFromBucket(bucket.name)
   }
   
   console.log('\nFinished downloading all images!')
