@@ -27,6 +27,10 @@ export type Database = {
           status: 'active' | 'draft' | 'archived'
           material: string | null
           dimensions: string | null
+          weight_kg: number | null
+          length_cm: number | null
+          width_cm: number | null
+          height_cm: number | null
           care_instructions: string | null
           seo_title: string | null
           seo_description: string | null
@@ -52,6 +56,10 @@ export type Database = {
           status?: 'active' | 'draft' | 'archived'
           material?: string | null
           dimensions?: string | null
+          weight_kg?: number | null
+          length_cm?: number | null
+          width_cm?: number | null
+          height_cm?: number | null
           care_instructions?: string | null
           seo_title?: string | null
           seo_description?: string | null
@@ -77,6 +85,10 @@ export type Database = {
           status?: 'active' | 'draft' | 'archived'
           material?: string | null
           dimensions?: string | null
+          weight_kg?: number | null
+          length_cm?: number | null
+          width_cm?: number | null
+          height_cm?: number | null
           care_instructions?: string | null
           seo_title?: string | null
           seo_description?: string | null

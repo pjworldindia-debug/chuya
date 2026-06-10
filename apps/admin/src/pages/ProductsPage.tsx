@@ -41,12 +41,12 @@ export default function ProductsPage() {
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: { status: 'draft', stock: 0, is_featured: false, is_new_arrival: false },
+    defaultValues: { status: 'draft', stock: 0, is_featured: false, is_new_arrival: false, weight_kg: 1, length_cm: 30, width_cm: 20, height_cm: 10 },
   })
 
   const openAdd = () => {
     setEditingProduct(null)
-    form.reset({ status: 'draft', stock: 0, is_featured: false, is_new_arrival: false })
+    form.reset({ status: 'draft', stock: 0, is_featured: false, is_new_arrival: false, weight_kg: 1, length_cm: 30, width_cm: 20, height_cm: 10 })
     setImageUrls([])
     setRelatedSlugs([])
     setRelatedUrlInput('')
@@ -73,6 +73,10 @@ export default function ProductsPage() {
       status: product.status,
       material: product.material,
       dimensions: product.dimensions,
+      weight_kg: product.weight_kg || 1,
+      length_cm: product.length_cm || 30,
+      width_cm: product.width_cm || 20,
+      height_cm: product.height_cm || 10,
       care_instructions: product.care_instructions,
       seo_title: product.seo_title,
       seo_description: product.seo_description,
@@ -313,8 +317,27 @@ export default function ProductsPage() {
                   <input {...form.register('material')} className="admin-input mt-1" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Dimensions</label>
-                  <input {...form.register('dimensions')} className="admin-input mt-1" />
+                  <label className="text-xs font-medium text-gray-500 uppercase">Dimensions Label</label>
+                  <input {...form.register('dimensions')} placeholder="e.g. 10 inches by 5 inches" className="admin-input mt-1" />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Weight (kg) *</label>
+                  <input {...form.register('weight_kg', { valueAsNumber: true })} type="number" step="0.01" className="admin-input mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Length (cm) *</label>
+                  <input {...form.register('length_cm', { valueAsNumber: true })} type="number" step="0.1" className="admin-input mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Width (cm) *</label>
+                  <input {...form.register('width_cm', { valueAsNumber: true })} type="number" step="0.1" className="admin-input mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Height (cm) *</label>
+                  <input {...form.register('height_cm', { valueAsNumber: true })} type="number" step="0.1" className="admin-input mt-1" />
                 </div>
               </div>
               <div>

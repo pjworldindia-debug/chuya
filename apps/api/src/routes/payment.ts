@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@chuya/shared/database.types'
+import { createShiprocketOrder } from '../services/shiprocket'
 
 const router = Router()
 
@@ -181,11 +182,13 @@ async function checkAndUpdateStatus(orderId: string) {
     const paymentStatus = state === 'COMPLETED' ? 'paid' : state === 'FAILED' ? 'failed' : 'pending'
 
     // Check current status before updating to avoid duplicate decrements
-    const { data: currentOrder } = await supabaseAdmin
+    const { data: rawCurrentOrder } = await supabaseAdmin
       .from('orders')
       .select('payment_status, items, timeline')
       .eq('id', orderId)
       .single()
+      
+    const currentOrder = rawCurrentOrder as any
 
     if (currentOrder && currentOrder.payment_status !== paymentStatus) {
       // Update order
@@ -208,11 +211,13 @@ async function checkAndUpdateStatus(orderId: string) {
             const productId = item.productId
             if (!productId) continue
             
-            const { data: product } = await supabaseAdmin
+            const { data: rawProduct } = await supabaseAdmin
               .from('products')
               .select('stock')
               .eq('id', productId)
               .single()
+              
+            const product = rawProduct as any
               
             if (product) {
               const newStock = Math.max(0, product.stock - item.quantity)
@@ -230,6 +235,20 @@ async function checkAndUpdateStatus(orderId: string) {
         note: paymentStatus === 'paid' ? 'Payment confirmed' : `Payment ${paymentStatus}`,
       })
       await supabaseAdmin.from('orders').update({ timeline }).eq('id', orderId)
+
+      // Automatically push to Shiprocket if paid
+      if (paymentStatus === 'paid' && currentOrder.payment_status !== 'paid') {
+        createShiprocketOrder(supabaseAdmin, orderId).then(async (shiprocketRes: any) => {
+          if (shiprocketRes) {
+             const newTimeline = [...timeline, {
+               status: 'confirmed',
+               timestamp: new Date().toISOString(),
+               note: `Order automatically pushed to Shiprocket (Shipment ID: ${shiprocketRes.shipment_id})`
+             }]
+             await supabaseAdmin.from('orders').update({ timeline: newTimeline }).eq('id', orderId)
+          }
+        })
+      }
     }
 
     return paymentStatus

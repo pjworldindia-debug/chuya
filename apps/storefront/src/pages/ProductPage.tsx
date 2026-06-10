@@ -8,6 +8,9 @@ import type { Swiper as SwiperType } from 'swiper'
 import 'swiper/css'
 import 'swiper/css/thumbs'
 import 'swiper/css/free-mode'
+import Lightbox from 'yet-another-react-lightbox'
+import Zoom from 'yet-another-react-lightbox/plugins/zoom'
+import 'yet-another-react-lightbox/styles.css'
 import { supabase } from '@chuya/shared/supabase'
 import type { Product, ColorVariant } from '@chuya/shared/types'
 import { formatCurrency, BRAND } from '@chuya/shared/constants'
@@ -21,6 +24,8 @@ import { Heart, Minus, Plus, ChevronDown, Truck, RotateCcw, Shield } from 'lucid
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>()
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details')
   const [addedToCart, setAddedToCart] = useState(false)
@@ -164,7 +169,12 @@ export default function ProductPage() {
               >
                 {images.map((img, i) => (
                   <SwiperSlide key={i}>
-                    <img src={img} alt={`${product.name} - ${i + 1}`} className="w-full h-full object-cover" />
+                    <img 
+                      src={img} 
+                      alt={`${product.name} - ${i + 1}`} 
+                      className="w-full h-full object-cover cursor-zoom-in" 
+                      onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}
+                    />
                   </SwiperSlide>
                 ))}
                 {images.length === 0 && (
@@ -447,6 +457,13 @@ export default function ProductPage() {
           )}
         </div>
       </div>
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        index={lightboxIndex}
+        slides={images.map(img => ({ src: img }))}
+        plugins={[Zoom]}
+      />
     </>
   )
 }

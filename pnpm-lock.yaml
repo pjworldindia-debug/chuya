@@ -165,6 +165,9 @@ importers:
       swiper:
         specifier: ^11.1.0
         version: 11.2.10
+      yet-another-react-lightbox:
+        specifier: ^3.32.0
+        version: 3.32.0(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -2144,6 +2147,20 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
+  yet-another-react-lightbox@3.32.0:
+    resolution: {integrity: sha512-FWODOMrE07i3O5MeWRcYlcnAUk518zkUYKAe307pVW5pkey3hKMcAIWn8yMIURzGvbd3m9eghWO9CocEZmQPIg==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      '@types/react': ^16 || ^17 || ^18 || ^19
+      '@types/react-dom': ^16 || ^17 || ^18 || ^19
+      react: ^16.8.0 || ^17 || ^18 || ^19
+      react-dom: ^16.8.0 || ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -3979,6 +3996,14 @@ snapshots:
   ws@8.20.0: {}
 
   yallist@3.1.1: {}
+
+  yet-another-react-lightbox@3.32.0(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    optionalDependencies:
+      '@types/react': 18.3.28
+      '@types/react-dom': 18.3.7(@types/react@18.3.28)
 
   zod@3.25.76: {}
 
