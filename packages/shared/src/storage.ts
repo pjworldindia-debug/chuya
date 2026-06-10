@@ -66,23 +66,26 @@ export async function uploadImage(
     const timestamp = Date.now()
     const filename = `${uuid}-${timestamp}.webp`
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filename, webpBlob, {
-        contentType: 'image/webp',
-        cacheControl: '31536000', // 1 year cache
-        upsert: false,
-      })
+    // Upload to VPS
+    const webpFile = new File([webpBlob], filename, { type: 'image/webp' })
+    const formData = new FormData()
+    formData.append('file', webpFile)
 
-    if (uploadError) {
-      throw new Error(`Upload failed: ${uploadError.message}`)
+    // Using VITE_API_URL or relative proxy
+    const apiUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_URL || '' : ''
+
+    const res = await fetch(`${apiUrl}/api/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(`Upload failed: ${data.error || res.statusText}`)
     }
 
-    // Get public URL
-    const { data } = supabase.storage.from(bucket).getPublicUrl(filename)
-
-    return data.publicUrl
+    // Return full URL to the image on the API server
+    return `${apiUrl}${data.publicUrl}`
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown upload error'
     throw new Error(message)
@@ -105,23 +108,24 @@ export async function uploadFile(
     const extension = file.name.split('.').pop() || 'bin'
     const filename = `${uuid}-${timestamp}.${extension}`
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filename, file, {
-        contentType: file.type,
-        cacheControl: '31536000', // 1 year cache
-        upsert: false,
-      })
+    // Upload to VPS
+    const newFile = new File([file], filename, { type: file.type })
+    const formData = new FormData()
+    formData.append('file', newFile)
 
-    if (uploadError) {
-      throw new Error(`Upload failed: ${uploadError.message}`)
+    const apiUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_URL || '' : ''
+
+    const res = await fetch(`${apiUrl}/api/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(`Upload failed: ${data.error || res.statusText}`)
     }
 
-    // Get public URL
-    const { data } = supabase.storage.from(bucket).getPublicUrl(filename)
-
-    return data.publicUrl
+    return `${apiUrl}${data.publicUrl}`
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown upload error'
     throw new Error(message)
@@ -137,7 +141,7 @@ export async function deleteImage(
 ): Promise<void> {
   try {
     // Extract filename from public URL
-    const url = new URL(publicUrl)
+    const url = new URL(publicUrl, 'http://localhost') // fallback base for relative urls
     const pathParts = url.pathname.split('/')
     const filename = pathParts[pathParts.length - 1]
 
@@ -145,12 +149,14 @@ export async function deleteImage(
       throw new Error('Could not extract filename from URL')
     }
 
-    const { error } = await supabase.storage
-      .from(bucket)
-      .remove([filename])
+    const apiUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_URL || '' : ''
 
-    if (error) {
-      throw new Error(`Delete failed: ${error.message}`)
+    const res = await fetch(`${apiUrl}/api/upload/${filename}`, {
+      method: 'DELETE'
+    })
+
+    if (!res.ok) {
+      throw new Error(`Delete failed: ${res.statusText}`)
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown delete error'

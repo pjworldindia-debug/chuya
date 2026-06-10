@@ -5,6 +5,8 @@ import { paymentRouter } from './routes/payment.js'
 import { couponRouter } from './routes/coupons.js'
 import { emailRouter } from './routes/email.js'
 import { storeRouter } from './routes/store.js'
+import { uploadRouter } from './routes/upload.js'
+import path from 'path'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 
@@ -61,6 +63,10 @@ app.use('/api/payment', strictLimiter, paymentRouter)
 app.use('/api/coupons', couponRouter)
 app.use('/api/email', strictLimiter, emailRouter)
 app.use('/api/store', storeRouter)
+app.use('/api/upload', uploadRouter)
+
+// Serve uploads folder as static files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
