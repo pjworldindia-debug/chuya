@@ -10,8 +10,9 @@ const router = Router()
 // Ensure uploads directory exists
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-// Since upload.js is built to dist/routes/upload.js, uploads is two levels up
-const uploadsDir = path.join(__dirname, '../../uploads')
+// We use a relative path from process.cwd() or similar, or just match the index.ts logic.
+// Since upload.ts is bundled into dist/index.js, __dirname will be apps/api/dist
+const uploadsDir = path.join(__dirname, '../uploads')
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
