@@ -30,16 +30,16 @@ export default function ShopPage() {
     setLocalMaxPrice(maxPrice)
   }, [category, minPrice, maxPrice])
 
+  const apiUrl = import.meta.env.VITE_API_URL || ''
+
   // Fetch categories for filter sidebar
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('display_order', { ascending: true })
-      if (error) throw error
-      return data as Category[]
+      const res = await fetch(`${apiUrl}/api/store/home`)
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      return json.data.categories as Category[]
     },
   })
 
@@ -54,39 +54,19 @@ export default function ShopPage() {
   } = useInfiniteQuery({
     queryKey: ['products', 'shop', category, minPrice, maxPrice, sort, search],
     queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
+      const params = new URLSearchParams()
+      if (category) params.set('category', category)
+      if (minPrice) params.set('minPrice', minPrice)
+      if (maxPrice) params.set('maxPrice', maxPrice)
+      if (sort) params.set('sort', sort)
+      if (search) params.set('search', search)
+      params.set('pageParam', String(pageParam))
+      params.set('limit', String(PRODUCTS_PER_PAGE))
 
-      if (category) query = query.eq('category_id', category)
-      if (minPrice) query = query.gte('price', parseFloat(minPrice))
-      if (maxPrice) query = query.lte('price', parseFloat(maxPrice))
-      if (search) query = query.ilike('name', `%${search}%`)
-
-      switch (sort) {
-        case 'price_asc':
-          query = query.order('price', { ascending: true })
-          break
-        case 'price_desc':
-          query = query.order('price', { ascending: false })
-          break
-        case 'name_asc':
-          query = query.order('name', { ascending: true })
-          break
-        case 'newest':
-        default:
-          query = query.order('created_at', { ascending: false })
-          break
-      }
-
-      const from = pageParam * PRODUCTS_PER_PAGE
-      const to = from + PRODUCTS_PER_PAGE - 1
-      query = query.range(from, to)
-
-      const { data, error } = await query
-      if (error) throw error
-      return { products: data as Product[], page: pageParam }
+      const res = await fetch(`${apiUrl}/api/store/shop?${params.toString()}`)
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      return { products: json.data.products as Product[], page: pageParam, totalCount: json.data.totalCount }
     },
     getNextPageParam: (lastPage) => {
       if (lastPage.products.length < PRODUCTS_PER_PAGE) return undefined
@@ -96,24 +76,7 @@ export default function ShopPage() {
   })
 
   // Total products count for current filters
-  const { data: totalProductsCount } = useQuery({
-    queryKey: ['products', 'count', category, minPrice, maxPrice, search],
-    queryFn: async () => {
-      let query = supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-
-      if (category) query = query.eq('category_id', category)
-      if (minPrice) query = query.gte('price', parseFloat(minPrice))
-      if (maxPrice) query = query.lte('price', parseFloat(maxPrice))
-      if (search) query = query.ilike('name', `%${search}%`)
-
-      const { count, error } = await query
-      if (error) throw error
-      return count || 0
-    },
-  })
+  const totalProductsCount = data?.pages[0]?.totalCount ?? 0
 
   const products = useMemo(
     () => data?.pages.flatMap((page) => page.products) || [],

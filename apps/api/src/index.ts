@@ -4,6 +4,7 @@ import cors from 'cors'
 import { paymentRouter } from './routes/payment.js'
 import { couponRouter } from './routes/coupons.js'
 import { emailRouter } from './routes/email.js'
+import { storeRouter } from './routes/store.js'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 
@@ -59,6 +60,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/payment', strictLimiter, paymentRouter)
 app.use('/api/coupons', couponRouter)
 app.use('/api/email', strictLimiter, emailRouter)
+app.use('/api/store', storeRouter)
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -31,53 +31,27 @@ export default function ProductPage() {
   const toggleWishlist = useWishlistStore((s) => s.toggleItem)
 
 
-  const { data: product, isLoading } = useQuery({
+  const apiUrl = import.meta.env.VITE_API_URL || ''
+
+  const { data: storeData, isLoading } = useQuery({
     queryKey: ['product', slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('slug', slug!)
-        .single()
-      if (error) throw error
-      return data as Product
+      const res = await fetch(`${apiUrl}/api/store/product/${slug}`)
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      return json.data as {
+        product: Product;
+        relatedProducts: Product[];
+        similarProducts: Product[];
+      }
     },
     enabled: !!slug,
   })
 
+  const product = storeData?.product
   const isWishlisted = useWishlistStore((s) => product ? s.hasItem(product.id) : false)
-
-  const { data: relatedProducts } = useQuery({
-    queryKey: ['products', 'related', product?.category_id, product?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
-        .eq('category_id', product!.category_id!)
-        .neq('id', product!.id)
-        .limit(4)
-      if (error) throw error
-      return data as Product[]
-    },
-    enabled: !!product?.category_id,
-  })
-
-  // Manually linked similar products
-  const { data: similarProducts } = useQuery({
-    queryKey: ['products', 'similar', product?.id, product?.related_product_slugs],
-    queryFn: async () => {
-      const slugs = product!.related_product_slugs!
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
-        .in('slug', slugs)
-      if (error) throw error
-      return data as Product[]
-    },
-    enabled: Array.isArray(product?.related_product_slugs) && product.related_product_slugs.length > 0,
-  })
+  const relatedProducts = storeData?.relatedProducts || []
+  const similarProducts = storeData?.similarProducts || []
 
   // Wishlist status is handled by wishlistStore
 

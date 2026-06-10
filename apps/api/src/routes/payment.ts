@@ -5,7 +5,7 @@ import type { Database } from '@chuya/shared/database.types'
 
 const router = Router()
 
-const getSupabaseAdmin = () => createClient<Database>(
+const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 )
@@ -33,7 +33,13 @@ const URLS = {
 /**
  * Get PhonePe OAuth Token (V2)
  */
+let cachedToken: string | null = null;
+let tokenExpiry: number = 0;
+
 async function getPhonePeToken() {
+  if (cachedToken && Date.now() < tokenExpiry) {
+    return cachedToken;
+  }
   const params = new URLSearchParams()
   params.append('client_id', PHONEPE_CLIENT_ID)
   params.append('client_secret', PHONEPE_CLIENT_SECRET)
@@ -50,7 +56,10 @@ async function getPhonePeToken() {
   if (!res.ok || !data.access_token) {
     throw new Error('OAuth failed: ' + JSON.stringify(data))
   }
-  return data.access_token
+  
+  cachedToken = data.access_token;
+  tokenExpiry = Date.now() + ((data.expires_in || 3600) * 1000) - 60000; // 1 minute buffer
+  return cachedToken;
 }
 
 /**
@@ -69,8 +78,6 @@ router.post('/initiate', async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: 'Missing required fields' })
       return
     }
-
-    const supabaseAdmin = getSupabaseAdmin()
 
     // Create order in database
     const { error: orderError } = await supabaseAdmin.from('orders').insert({
@@ -154,7 +161,6 @@ router.post('/initiate', async (req: Request, res: Response) => {
 })
 
 async function checkAndUpdateStatus(orderId: string) {
-  const supabaseAdmin = getSupabaseAdmin()
   const accessToken = await getPhonePeToken()
   
   // Status endpoint: /apis/pg/checkout/v2/order/{merchantOrderId}/status

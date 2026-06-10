@@ -13,11 +13,8 @@ export default function OrderSuccessPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const clearCart = useCartStore((s) => s.clearCart)
 
-  // Ping API to check and verify PhonePe status
   useEffect(() => {
     if (orderId) {
-      const apiUrl = import.meta.env.VITE_API_URL || ''
-      fetch(`${apiUrl}/api/payment/status/${orderId}`).catch(console.error)
       clearCart()
     }
   }, [orderId, clearCart])
@@ -25,6 +22,10 @@ export default function OrderSuccessPage() {
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
+      // Proactively trigger status check on the backend
+      const apiUrl = import.meta.env.VITE_API_URL || ''
+      await fetch(`${apiUrl}/api/payment/status/${orderId}`).catch(console.error)
+
       const { data, error } = await supabase
         .from('orders')
         .select('*')
@@ -32,6 +33,9 @@ export default function OrderSuccessPage() {
         .single()
       if (error) throw error
       return data as Order
+    },
+    refetchInterval: (query) => {
+      return query.state.data?.payment_status === 'pending' ? 3000 : false
     },
     enabled: !!orderId,
     retry: 2,
@@ -120,6 +124,10 @@ export default function OrderSuccessPage() {
             <div className="w-16 h-16 bg-red-50 flex items-center justify-center mx-auto mb-6 animate-fade-in rounded-full">
               <span className="text-red-500 text-3xl font-bold">!</span>
             </div>
+          ) : order.payment_status === 'pending' ? (
+            <div className="w-16 h-16 bg-amber-50 flex items-center justify-center mx-auto mb-6 animate-fade-in rounded-full">
+              <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            </div>
           ) : (
             <div className="w-16 h-16 bg-green-50 flex items-center justify-center mx-auto mb-6 animate-fade-in rounded-full">
               <CheckCircle size={32} className="text-green-500" />
@@ -127,12 +135,18 @@ export default function OrderSuccessPage() {
           )}
 
           <h1 className="font-serif text-3xl md:text-4xl mb-2 animate-fade-in">
-            {order.payment_status === 'failed' ? 'Payment Incomplete' : 'Thank You!'}
+            {order.payment_status === 'failed' 
+              ? 'Payment Incomplete' 
+              : order.payment_status === 'pending'
+                ? 'Verifying Payment...'
+                : 'Thank You!'}
           </h1>
           <p className="text-muted mb-8 animate-fade-in">
             {order.payment_status === 'failed' 
               ? 'Your payment could not be completed successfully. Please try again.' 
-              : 'Your order has been placed successfully.'}
+              : order.payment_status === 'pending'
+                ? 'Please wait while we verify your payment with the bank.'
+                : 'Your order has been placed successfully.'}
           </p>
 
           <div className="bg-white p-6 md:p-8 text-left space-y-4 animate-slide-up">

@@ -2,9 +2,11 @@ import { Router, type Request, type Response } from 'express'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@chuya/shared/database.types'
 
+import { cache } from '../utils/cache.js'
+
 const router = Router()
 
-const getSupabaseAdmin = () => createClient<Database>(
+const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 )
@@ -23,18 +25,24 @@ router.post('/validate', async (req: Request, res: Response) => {
     }
 
     const upperCode = code.toUpperCase()
+    const cacheKey = `coupon_${upperCode}`
+    let coupon = cache.get<any>(cacheKey)
 
-    const supabaseAdmin = getSupabaseAdmin()
-    const { data: coupon, error } = await supabaseAdmin
-      .from('coupons')
-      .select('*')
-      .eq('code', upperCode)
-      .eq('is_active', true)
-      .single()
+    if (!coupon) {
+      const { data, error } = await supabaseAdmin
+        .from('coupons')
+        .select('*')
+        .eq('code', upperCode)
+        .eq('is_active', true)
+        .single()
 
-    if (error || !coupon) {
-      res.json({ valid: false, discount: 0, error: 'Coupon not found' })
-      return
+      if (error || !data) {
+        res.json({ valid: false, discount: 0, error: 'Coupon not found' })
+        return
+      }
+      
+      coupon = data
+      cache.set(cacheKey, coupon, 5 * 60 * 1000) // cache for 5 minutes
     }
 
     // Check expiry

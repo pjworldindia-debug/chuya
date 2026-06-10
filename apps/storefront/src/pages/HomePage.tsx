@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
@@ -14,120 +14,30 @@ import ProductCard from '../components/ProductCard'
 import Button from '../components/Button'
 
 export default function HomePage() {
-  const [banners, setBanners] = useState<Banner[]>([])
+  const apiUrl = import.meta.env.VITE_API_URL || ''
 
-  // Fetch banners with realtime subscription
-  const { data: initialBanners } = useQuery({
-    queryKey: ['banners', 'active'],
+  // Fetch aggregated home data via cached API proxy
+  const { data: homeData, isLoading: loadingFeatured } = useQuery({
+    queryKey: ['store', 'home'],
     queryFn: async () => {
-      const now = new Date().toISOString()
-      const { data, error } = await supabase
-        .from('banners')
-        .select('*')
-        .eq('is_active', true)
-        .or(`start_date.is.null,start_date.lte.${now}`)
-        .or(`end_date.is.null,end_date.gte.${now}`)
-        .order('display_order', { ascending: true })
-
-      if (error) throw error
-      return data as Banner[]
+      const res = await fetch(`${apiUrl}/api/store/home`)
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      return json.data as {
+        banners: Banner[];
+        featuredProducts: Product[];
+        newArrivals: Product[];
+        categories: any[];
+        totalProducts: number;
+      }
     },
   })
 
-  useEffect(() => {
-    if (initialBanners) setBanners(initialBanners)
-  }, [initialBanners])
-
-  // Realtime subscription for banners
-  const handleBannerChange = useCallback(() => {
-    const now = new Date().toISOString()
-    supabase
-      .from('banners')
-      .select('*')
-      .eq('is_active', true)
-      .or(`start_date.is.null,start_date.lte.${now}`)
-      .or(`end_date.is.null,end_date.gte.${now}`)
-      .order('display_order', { ascending: true })
-      .then(({ data }) => {
-        if (data) setBanners(data as Banner[])
-      })
-  }, [])
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('banners-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'banners' },
-        handleBannerChange
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [handleBannerChange])
-
-  // Featured products
-  const { data: featuredProducts, isLoading: loadingFeatured } = useQuery({
-    queryKey: ['products', 'featured'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
-        .eq('is_featured', true)
-        .limit(6)
-
-      if (error) throw error
-      return data as Product[]
-    },
-  })
-
-  // New arrivals
-  const { data: newArrivals } = useQuery({
-    queryKey: ['products', 'new-arrivals'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active')
-        .eq('is_new_arrival', true)
-        .order('created_at', { ascending: false })
-        .limit(4)
-
-      if (error) throw error
-      return data as Product[]
-    },
-  })
-
-  // Categories
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('display_order', { ascending: true })
-
-      if (error) throw error
-      return data
-    },
-  })
-
-  // Total products count
-  const { data: totalProducts } = useQuery({
-    queryKey: ['products', 'count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-
-      if (error) throw error
-      return count || 0
-    },
-  })
+  const banners = homeData?.banners || []
+  const featuredProducts = homeData?.featuredProducts || []
+  const newArrivals = homeData?.newArrivals || []
+  const categories = homeData?.categories || []
+  const totalProducts = homeData?.totalProducts
 
   const heroBanners = banners.filter(b => !b.position || b.position === 'hero')
   const secondaryBanners = banners.filter(b => b.position === 'secondary')
