@@ -39,7 +39,7 @@ router.post('/', upload.single('file'), (req, res) => {
   // In production, the API might be api.domain.com.
   // The frontend just needs the relative or full path.
   // We'll return the relative path so the frontend can prepend the API URL.
-  const publicUrl = `/uploads/${req.file.filename}`
+  const publicUrl = `/api/uploads/${req.file.filename}`
 
   res.json({ publicUrl })
 })

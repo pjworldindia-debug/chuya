@@ -66,7 +66,7 @@ app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
 
 // Serve uploads folder as static files
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
+app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

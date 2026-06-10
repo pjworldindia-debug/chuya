@@ -41,8 +41,8 @@ async function downloadImage(url: string): Promise<string | null> {
     // we save the relative path to the db
     // but the frontend storage.ts code might expect a full URL.
     // Wait, the API returns `/uploads/filename` and storage.ts prepends the API URL.
-    // So the database stores `/uploads/filename`.
-    return `/uploads/${filename}`
+    // So the database stores `/api/uploads/filename`.
+    return `/api/uploads/${filename}`
   } catch (err) {
     console.error(`Failed to download ${url}:`, err)
     return url // Keep original if failed
