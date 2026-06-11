@@ -8,11 +8,9 @@ import crypto from 'crypto'
 const router = Router()
 
 // Ensure uploads directory exists
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-// We use a relative path from process.cwd() or similar, or just match the index.ts logic.
-// Since upload.ts is bundled into dist/index.js, __dirname will be apps/api/dist
-const uploadsDir = path.join(__dirname, '../uploads')
+// Use process.cwd() to consistently save to apps/api/uploads in both dev and prod
+const uploadsDir = path.join(process.cwd(), 'uploads')
+
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })

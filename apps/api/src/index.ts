@@ -67,10 +67,9 @@ app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
 
 // Resolve absolute path to uploads folder
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-// Since index.js is built to dist/index.js, the uploads folder is one level up
-const uploadsPath = path.join(__dirname, '../uploads')
+// Use process.cwd() so it works consistently in dev and prod when run from apps/api
+const uploadsPath = path.join(process.cwd(), 'uploads')
+
 
 // Serve uploads folder as static files
 app.use('/api/uploads', express.static(uploadsPath))
