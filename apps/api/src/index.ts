@@ -66,10 +66,12 @@ app.use('/api/email', strictLimiter, emailRouter)
 app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
 
-// Resolve absolute path to uploads folder
-// Use process.cwd() so it works consistently in dev and prod when run from apps/api
-const uploadsPath = path.join(process.cwd(), 'uploads')
+import { fileURLToPath } from 'url'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
+// Bulletproof path resolution: whether in 'src' or 'dist', go up one level to find 'uploads'
+const uploadsPath = path.join(__dirname, '../uploads')
 
 // Serve uploads folder as static files
 app.use('/api/uploads', express.static(uploadsPath))

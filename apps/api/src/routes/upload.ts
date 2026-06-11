@@ -7,11 +7,15 @@ import crypto from 'crypto'
 
 const router = Router()
 
-// Ensure uploads directory exists
-// Use process.cwd() to consistently save to apps/api/uploads in both dev and prod
-const uploadsDir = path.join(process.cwd(), 'uploads')
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-
+// Bulletproof path resolution:
+// If running dev (src/routes), __dirname is 'routes'. Go up to 'src', then up to 'api' and down to 'uploads'.
+// If running prod (dist), __dirname is 'dist'. Go up to 'api' and down to 'uploads'.
+const isRoutesDir = __dirname.endsWith('routes')
+const baseDir = isRoutesDir ? path.join(__dirname, '..') : __dirname
+const uploadsDir = path.join(baseDir, '../uploads')
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
