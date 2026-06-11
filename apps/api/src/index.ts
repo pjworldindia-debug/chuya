@@ -73,27 +73,9 @@ const __dirname = path.dirname(__filename)
 // Bulletproof path resolution: whether in 'src' or 'dist', go up one level to find 'uploads'
 const uploadsPath = path.join(__dirname, '../uploads')
 
-import fs from 'fs'
-
-app.get('/api/debug-uploads', (req, res) => {
-  try {
-    const exists = fs.existsSync(uploadsPath)
-    const files = exists ? fs.readdirSync(uploadsPath).slice(0, 5) : []
-    res.json({
-      success: true,
-      uploadsPath,
-      cwd: process.cwd(),
-      dirname: __dirname,
-      exists,
-      files
-    })
-  } catch (err) {
-    res.status(500).json({ success: false, error: String(err) })
-  }
-})
-
 // Serve uploads folder as static files
 app.use('/api/uploads', express.static(uploadsPath))
+
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Unhandled error:', err)
