@@ -104,12 +104,22 @@ export async function createShiprocketOrder(
     if (totalWeight === 0) totalWeight = 1
 
     // 4. Construct Payload
+    // Shiprocket requires date format: YYYY-MM-DD HH:mm
+    const dateObj = new Date(order.created_at || Date.now())
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    const formattedDate = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`
+
+    // Extract first and last name from billing name
+    const nameParts = (address.name || 'Customer').trim().split(' ')
+    const firstName = nameParts[0]
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ' '
+
     const payload = {
       order_id: orderId,
-      order_date: new Date(order.created_at || Date.now()).toISOString().split('T')[0],
+      order_date: formattedDate,
       pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary',
-      billing_customer_name: address.name,
-      billing_last_name: '',
+      billing_customer_name: firstName,
+      billing_last_name: lastName,
       billing_address: address.line1,
       billing_address_2: address.line2 || '',
       billing_city: address.city,
