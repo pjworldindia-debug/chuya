@@ -55,6 +55,7 @@ export default function Navbar() {
     { label: 'Home', href: '/' },
     { label: 'Collections', href: '/shop?sort=newest' },
     { label: 'About', href: '/about' },
+    { label: 'Track', href: 'https://chuya.shiprocket.co/tracking', external: true },
   ]
 
   return (
@@ -88,14 +89,27 @@ export default function Navbar() {
           {/* Center nav links (desktop) */}
           <div className="hidden lg:flex items-center gap-10">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="text-sm tracking-[0.08em] uppercase text-chuya/70 hover:text-chuya transition-colors duration-200"
-                id={`nav-${link.label.toLowerCase()}`}
-              >
-                {link.label}
-              </Link>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm tracking-[0.08em] uppercase text-chuya/70 hover:text-chuya transition-colors duration-200"
+                  id={`nav-${link.label.toLowerCase()}`}
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="text-sm tracking-[0.08em] uppercase text-chuya/70 hover:text-chuya transition-colors duration-200"
+                  id={`nav-${link.label.toLowerCase()}`}
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
           </div>
 
@@ -218,14 +232,27 @@ export default function Navbar() {
         <div className="fixed inset-0 z-40 bg-cream pt-20 px-6 lg:hidden animate-fade-in">
           <div className="flex flex-col gap-8 pt-8">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="font-serif text-3xl tracking-wide"
-                id={`mobile-nav-${link.label.toLowerCase()}`}
-              >
-                {link.label}
-              </Link>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-serif text-3xl tracking-wide"
+                  id={`mobile-nav-${link.label.toLowerCase()}`}
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="font-serif text-3xl tracking-wide"
+                  id={`mobile-nav-${link.label.toLowerCase()}`}
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
             <div className="h-px bg-chuya/10 my-4" />
             <Link to={user ? '/account' : '/auth'} state={!user ? { from: location.pathname } : undefined} className="text-sm tracking-wider uppercase text-muted">
