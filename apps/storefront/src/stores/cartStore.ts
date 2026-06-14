@@ -138,6 +138,10 @@ export const useCartStore = create<CartState>()(
             })
           }
 
+          // DEBUG ALERT TO HELP USER
+          alert(`Cart Merge Debug:\nFound ${dbItems?.length || 0} items in Database.\nFound ${localItems.length} items in Guest Cart.`)
+
+
           localItems.forEach(localItem => {
             const existing = mergedMap.get(localItem.productId)
             if (existing) {
