@@ -15,17 +15,15 @@ const syncToDb = async (items: CartItemLocal[]) => {
         product_id: item.productId,
         quantity: item.quantity
       }))
-      // Upsert the current items
-      const { error: upsertErr } = await supabase.from('cart_items').upsert(payload, { onConflict: 'user_id,product_id' })
-      if (upsertErr) console.error('Cart Upsert Error:', upsertErr)
+      
+      // Wipe the existing cart for this user to ensure clean state
+      const { error: delErr } = await supabase.from('cart_items').delete().eq('user_id', user.id)
+      if (delErr) console.error('Cart Wipe Error:', delErr)
 
-      // Delete any items not in the current payload
-      const productIds = items.map(i => i.productId)
-      const { error: delErr } = await supabase.from('cart_items')
-        .delete()
-        .eq('user_id', user.id)
-        .not('product_id', 'in', productIds)
-      if (delErr) console.error('Cart Delete Error:', delErr)
+      // Insert the current payload
+      const { error: insErr } = await supabase.from('cart_items').insert(payload)
+      if (insErr) console.error('Cart Insert Error:', insErr)
+
     } else {
       // Cart is empty, delete all items for this user
       const { error } = await supabase.from('cart_items').delete().eq('user_id', user.id)
@@ -162,7 +160,12 @@ export const useCartStore = create<CartState>()(
               product_id: item.productId,
               quantity: item.quantity
             }))
-            await supabase.from('cart_items').upsert(payload, { onConflict: 'user_id,product_id' })
+            
+            const { error: delErr } = await supabase.from('cart_items').delete().eq('user_id', userId)
+            if (delErr) console.error('Merge Cart Wipe Error:', delErr)
+            
+            const { error: insErr } = await supabase.from('cart_items').insert(payload)
+            if (insErr) console.error('Merge Cart Insert Error:', insErr)
           } else {
             await supabase.from('cart_items').delete().eq('user_id', userId)
           }
