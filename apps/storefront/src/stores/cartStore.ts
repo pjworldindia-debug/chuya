@@ -16,15 +16,20 @@ const syncToDb = async (items: CartItemLocal[]) => {
         quantity: item.quantity
       }))
       // Upsert the current items
-      await supabase.from('cart_items').upsert(payload, { onConflict: 'user_id,product_id' })
+      const { error: upsertErr } = await supabase.from('cart_items').upsert(payload, { onConflict: 'user_id,product_id' })
+      if (upsertErr) console.error('Cart Upsert Error:', upsertErr)
+
       // Delete any items not in the current payload
-      await supabase.from('cart_items')
+      const productIds = items.map(i => i.productId)
+      const { error: delErr } = await supabase.from('cart_items')
         .delete()
         .eq('user_id', user.id)
-        .not('product_id', 'in', `(${items.map(i => i.productId).join(',')})`)
+        .not('product_id', 'in', `(${productIds.join(',')})`)
+      if (delErr) console.error('Cart Delete Error:', delErr)
     } else {
       // Cart is empty, delete all items for this user
-      await supabase.from('cart_items').delete().eq('user_id', user.id)
+      const { error } = await supabase.from('cart_items').delete().eq('user_id', user.id)
+      if (error) console.error('Cart Delete All Error:', error)
     }
   } catch (err) {
     console.error('Failed to sync cart mutations to DB:', err)
@@ -106,10 +111,16 @@ export const useCartStore = create<CartState>()(
 
       syncAndMergeCart: async (userId: string) => {
         try {
-          const { data: dbItems } = await supabase
+          const { data: dbItems, error: fetchErr } = await supabase
             .from('cart_items')
             .select('quantity, product_id, products(name, price, images, stock)')
             .eq('user_id', userId)
+            
+          if (fetchErr) {
+            console.error('Failed to fetch DB items for merging:', fetchErr)
+            // If it fails, do not proceed with overwriting the DB with only local items.
+            return
+          }
 
           const localItems = get().items
           const mergedMap = new Map<string, CartItemLocal>()

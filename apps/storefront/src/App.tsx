@@ -27,7 +27,6 @@ export default function App() {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        useCartStore.getState().syncAndMergeCart(session.user.id)
         // Fetch profile
         supabase
           .from('profiles')
