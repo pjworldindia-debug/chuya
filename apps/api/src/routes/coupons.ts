@@ -6,16 +6,23 @@ import { cache } from '../utils/cache.js'
 
 const router = Router()
 
-const supabaseAdmin = createClient<Database>(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-)
+let _supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient<Database>(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+    )
+  }
+  return _supabaseAdmin
+}
 
 /**
  * POST /api/coupons/validate
  * Validates a coupon code and returns the discount amount
  */
 router.post('/validate', async (req: Request, res: Response) => {
+  const supabaseAdmin = getSupabaseAdmin()
   try {
     const { code, subtotal } = req.body
 

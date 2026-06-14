@@ -35,9 +35,9 @@ async function getAuthToken() {
   tokenExpiryTime = Date.now() + 24 * 60 * 60 * 1e3;
   return cachedToken;
 }
-async function createShiprocketOrder(supabaseAdmin4, orderId) {
+async function createShiprocketOrder(supabaseAdmin2, orderId) {
   try {
-    const { data: rawOrder, error: orderError } = await supabaseAdmin4.from("orders").select("*").eq("id", orderId).single();
+    const { data: rawOrder, error: orderError } = await supabaseAdmin2.from("orders").select("*").eq("id", orderId).single();
     const order = rawOrder;
     if (orderError || !order) {
       throw new Error(`Order ${orderId} not found`);
@@ -56,7 +56,7 @@ async function createShiprocketOrder(supabaseAdmin4, orderId) {
     let maxWidth = 20;
     let maxHeight = 10;
     for (const item of items) {
-      const { data: rawProduct } = await supabaseAdmin4.from("products").select("weight_kg, length_cm, width_cm, height_cm, sku").eq("id", item.productId).single();
+      const { data: rawProduct } = await supabaseAdmin2.from("products").select("weight_kg, length_cm, width_cm, height_cm, sku").eq("id", item.productId).single();
       const product = rawProduct;
       if (product) {
         totalWeight += (product.weight_kg || 1) * item.quantity;
@@ -129,10 +129,16 @@ async function createShiprocketOrder(supabaseAdmin4, orderId) {
 
 // src/routes/payment.ts
 var router = Router();
-var supabaseAdmin = createClient(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
-);
+var _supabaseAdmin = null;
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
+    );
+  }
+  return _supabaseAdmin;
+}
 var PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || "").trim();
 var PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || "").trim();
 var PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || "").trim();
@@ -168,6 +174,7 @@ async function getPhonePeToken() {
   return cachedToken2;
 }
 router.post("/initiate", async (req, res) => {
+  const supabaseAdmin2 = getSupabaseAdmin();
   try {
     const {
       orderId,
@@ -188,7 +195,7 @@ router.post("/initiate", async (req, res) => {
       res.status(400).json({ success: false, error: "Missing required fields" });
       return;
     }
-    const { error: orderError } = await supabaseAdmin.from("orders").insert({
+    const { error: orderError } = await supabaseAdmin2.from("orders").insert({
       id: orderId,
       user_id: userId || null,
       guest_email: customerEmail || null,
@@ -209,7 +216,7 @@ router.post("/initiate", async (req, res) => {
       return;
     }
     if (couponCode) {
-      await supabaseAdmin.rpc("increment_coupon_used", { coupon_code: couponCode }).catch(() => {
+      await supabaseAdmin2.rpc("increment_coupon_used", { coupon_code: couponCode }).catch(() => {
         console.warn("Failed to increment coupon usage");
       });
     }
@@ -337,6 +344,7 @@ router.get("/status/:orderId", async (req, res) => {
   }
 });
 router.post("/callback", async (req, res) => {
+  const supabaseAdmin2 = getSupabaseAdmin();
   try {
     const { response } = req.body;
     if (response) {
@@ -416,11 +424,18 @@ var cache = new CacheService();
 
 // src/routes/coupons.ts
 var router2 = Router2();
-var supabaseAdmin2 = createClient2(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
-);
+var _supabaseAdmin2 = null;
+function getSupabaseAdmin2() {
+  if (!_supabaseAdmin2) {
+    _supabaseAdmin2 = createClient2(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
+    );
+  }
+  return _supabaseAdmin2;
+}
 router2.post("/validate", async (req, res) => {
+  const supabaseAdmin2 = getSupabaseAdmin2();
   try {
     const { code, subtotal } = req.body;
     if (!code || typeof subtotal !== "number") {
@@ -480,7 +495,7 @@ import { Resend } from "resend";
 import { createClient as createClient3 } from "@supabase/supabase-js";
 var router3 = Router3();
 var resend = new Resend(process.env.RESEND_API_KEY || "");
-var getSupabaseAdmin = () => createClient3(
+var getSupabaseAdmin3 = () => createClient3(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
 );
@@ -551,8 +566,8 @@ router3.post("/newsletter", async (req, res) => {
       res.status(400).json({ success: false, error: "Email is required" });
       return;
     }
-    const supabaseAdmin4 = getSupabaseAdmin();
-    const { error: insertError } = await supabaseAdmin4.from("subscribers").insert({ email });
+    const supabaseAdmin2 = getSupabaseAdmin3();
+    const { error: insertError } = await supabaseAdmin2.from("subscribers").insert({ email });
     if (insertError) {
       console.warn("Subscriber insert failed (might already exist):", insertError);
     }
@@ -584,10 +599,16 @@ router3.post("/newsletter", async (req, res) => {
 import { Router as Router4 } from "express";
 import { createClient as createClient4 } from "@supabase/supabase-js";
 var router4 = Router4();
-var supabaseAdmin3 = createClient4(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
-);
+var _supabaseAdmin3 = null;
+function getSupabaseAdmin4() {
+  if (!_supabaseAdmin3) {
+    _supabaseAdmin3 = createClient4(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
+    );
+  }
+  return _supabaseAdmin3;
+}
 var CACHE_TTL = 5 * 60 * 1e3;
 router4.get("/home", async (_req, res) => {
   const cacheKey = "store_home_data";
@@ -598,6 +619,7 @@ router4.get("/home", async (_req, res) => {
   }
   try {
     const now = (/* @__PURE__ */ new Date()).toISOString();
+    const supabaseAdmin2 = getSupabaseAdmin4();
     const [
       { data: banners },
       { data: featuredProducts },
@@ -605,11 +627,11 @@ router4.get("/home", async (_req, res) => {
       { data: categories },
       { count: totalProducts }
     ] = await Promise.all([
-      supabaseAdmin3.from("banners").select("*").eq("is_active", true).or(`start_date.is.null,start_date.lte.${now}`).or(`end_date.is.null,end_date.gte.${now}`).order("display_order", { ascending: true }),
-      supabaseAdmin3.from("products").select("*").eq("status", "active").eq("is_featured", true).limit(6),
-      supabaseAdmin3.from("products").select("*").eq("status", "active").eq("is_new_arrival", true).order("created_at", { ascending: false }).limit(4),
-      supabaseAdmin3.from("categories").select("*").order("display_order", { ascending: true }),
-      supabaseAdmin3.from("products").select("*", { count: "exact", head: true }).eq("status", "active")
+      supabaseAdmin2.from("banners").select("*").eq("is_active", true).or(`start_date.is.null,start_date.lte.${now}`).or(`end_date.is.null,end_date.gte.${now}`).order("display_order", { ascending: true }),
+      supabaseAdmin2.from("products").select("*").eq("status", "active").eq("is_featured", true).limit(6),
+      supabaseAdmin2.from("products").select("*").eq("status", "active").eq("is_new_arrival", true).order("created_at", { ascending: false }).limit(4),
+      supabaseAdmin2.from("categories").select("*").order("display_order", { ascending: true }),
+      supabaseAdmin2.from("products").select("*", { count: "exact", head: true }).eq("status", "active")
     ]);
     const responseData = {
       banners: banners || [],
@@ -636,7 +658,8 @@ router4.get("/shop", async (req, res) => {
   try {
     const pageNum = parseInt(pageParam, 10) || 0;
     const limitNum = parseInt(limit, 10) || 12;
-    let query = supabaseAdmin3.from("products").select("*", { count: "exact" }).eq("status", "active");
+    const supabaseAdmin2 = getSupabaseAdmin4();
+    let query = supabaseAdmin2.from("products").select("*", { count: "exact" }).eq("status", "active");
     if (category) query = query.eq("category_id", category);
     if (minPrice) query = query.gte("price", parseFloat(minPrice));
     if (maxPrice) query = query.lte("price", parseFloat(maxPrice));
@@ -661,7 +684,7 @@ router4.get("/shop", async (req, res) => {
     query = query.range(from, to);
     const [productsResult, { data: categories }] = await Promise.all([
       query,
-      supabaseAdmin3.from("categories").select("*").order("display_order", { ascending: true })
+      supabaseAdmin2.from("categories").select("*").order("display_order", { ascending: true })
     ]);
     const responseData = {
       products: productsResult.data || [],
@@ -684,15 +707,16 @@ router4.get("/product/:slug", async (req, res) => {
     return;
   }
   try {
-    const { data: rawProduct, error } = await supabaseAdmin3.from("products").select("*").eq("slug", slug).eq("status", "active").single();
+    const supabaseAdmin2 = getSupabaseAdmin4();
+    const { data: rawProduct, error } = await supabaseAdmin2.from("products").select("*").eq("slug", slug).eq("status", "active").single();
     if (error) throw error;
     const product = rawProduct;
     const [
       { data: relatedProducts },
       { data: similarProducts }
     ] = await Promise.all([
-      product.category_id ? supabaseAdmin3.from("products").select("*").eq("status", "active").eq("category_id", product.category_id).neq("id", product.id).limit(4) : Promise.resolve({ data: [] }),
-      product.related_product_slugs && product.related_product_slugs.length > 0 ? supabaseAdmin3.from("products").select("*").eq("status", "active").in("slug", product.related_product_slugs) : Promise.resolve({ data: [] })
+      product.category_id ? supabaseAdmin2.from("products").select("*").eq("status", "active").eq("category_id", product.category_id).neq("id", product.id).limit(4) : Promise.resolve({ data: [] }),
+      product.related_product_slugs && product.related_product_slugs.length > 0 ? supabaseAdmin2.from("products").select("*").eq("status", "active").in("slug", product.related_product_slugs) : Promise.resolve({ data: [] })
     ]);
     const responseData = {
       product,

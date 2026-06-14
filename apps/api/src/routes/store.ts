@@ -5,10 +5,16 @@ import { cache } from '../utils/cache.js'
 
 const router = Router()
 
-const supabaseAdmin = createClient<Database>(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-)
+let _supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient<Database>(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+    )
+  }
+  return _supabaseAdmin
+}
 
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
@@ -28,6 +34,7 @@ router.get('/home', async (_req: Request, res: Response) => {
 
   try {
     const now = new Date().toISOString()
+    const supabaseAdmin = getSupabaseAdmin()
 
     const [
       { data: banners },
@@ -102,6 +109,7 @@ router.get('/shop', async (req: Request, res: Response) => {
   try {
     const pageNum = parseInt(pageParam as string, 10) || 0
     const limitNum = parseInt(limit as string, 10) || 12
+    const supabaseAdmin = getSupabaseAdmin()
 
     let query = supabaseAdmin
       .from('products')
@@ -169,6 +177,7 @@ router.get('/product/:slug', async (req: Request, res: Response) => {
   }
 
   try {
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: rawProduct, error } = await supabaseAdmin
       .from('products')
       .select('*')

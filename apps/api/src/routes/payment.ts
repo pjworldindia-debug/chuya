@@ -6,10 +6,16 @@ import { createShiprocketOrder } from '../services/shiprocket'
 
 const router = Router()
 
-const supabaseAdmin = createClient<Database>(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-)
+let _supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient<Database>(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+    )
+  }
+  return _supabaseAdmin
+}
 
 // PhonePe V2 Credentials
 const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || '').trim()
@@ -68,6 +74,7 @@ async function getPhonePeToken() {
  * Creates a PhonePe payment (V2) and returns the redirect URL
  */
 router.post('/initiate', async (req: Request, res: Response) => {
+  const supabaseAdmin = getSupabaseAdmin()
   try {
     const {
       orderId, amount, items, shippingAddress, userId,
@@ -283,6 +290,7 @@ router.get('/status/:orderId', async (req: Request, res: Response) => {
  * Server-to-server webhook from PhonePe
  */
 router.post('/callback', async (req: Request, res: Response) => {
+  const supabaseAdmin = getSupabaseAdmin()
   try {
     const { response } = req.body
     
