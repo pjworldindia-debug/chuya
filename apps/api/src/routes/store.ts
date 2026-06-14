@@ -183,9 +183,14 @@ router.get('/product/:slug', async (req: Request, res: Response) => {
       .select('*')
       .eq('slug', slug)
       .eq('status', 'active')
-      .single()
+      .maybeSingle()
 
     if (error) throw error
+
+    if (!rawProduct) {
+      res.status(404).json({ success: false, error: 'Product not found' })
+      return
+    }
 
     const product = rawProduct as any
 
