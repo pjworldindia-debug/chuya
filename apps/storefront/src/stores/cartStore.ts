@@ -24,7 +24,7 @@ const syncToDb = async (items: CartItemLocal[]) => {
       const { error: delErr } = await supabase.from('cart_items')
         .delete()
         .eq('user_id', user.id)
-        .not('product_id', 'in', `(${productIds.join(',')})`)
+        .not('product_id', 'in', productIds)
       if (delErr) console.error('Cart Delete Error:', delErr)
     } else {
       // Cart is empty, delete all items for this user
