@@ -49,12 +49,18 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:8081',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'http://127.0.0.1:5173',
     process.env.STOREFRONT_URL || 'https://chuya.in',
     process.env.ADMIN_URL || 'https://admin.chuya.in',
   ].filter(Boolean),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-VERIFY'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-VERIFY', 'Accept', 'Origin', 'X-Requested-With'],
 }))
 
 app.use(express.json({ limit: '10kb' })) // Limit payload size to prevent DoS
