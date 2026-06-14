@@ -1,4 +1,13 @@
-import 'dotenv/config'
+import * as dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Load .env explicitly from apps/api root
+dotenv.config({ path: path.resolve(__dirname, '../.env') })
+
 import express from 'express'
 import cors from 'cors'
 import { paymentRouter } from './routes/payment.js'
@@ -6,8 +15,7 @@ import { couponRouter } from './routes/coupons.js'
 import { emailRouter } from './routes/email.js'
 import { storeRouter } from './routes/store.js'
 import { uploadRouter } from './routes/upload.js'
-import path from 'path'
-import { fileURLToPath } from 'url'
+
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 
