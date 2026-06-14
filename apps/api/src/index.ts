@@ -26,7 +26,9 @@ const PORT = process.env.PORT || 4000
 app.set('trust proxy', 1)
 
 // Security Headers
-app.use(helmet())
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}))
 
 // Global Rate Limiter
 const globalLimiter = rateLimit({
@@ -46,18 +48,39 @@ const strictLimiter = rateLimit({
 })
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://localhost:8080',
-    'http://localhost:8081',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'http://127.0.0.1:5173',
-    process.env.STOREFRONT_URL || 'https://chuya.in',
-    process.env.ADMIN_URL || 'https://admin.chuya.in',
-  ].filter(Boolean),
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:5173',
+      process.env.STOREFRONT_URL,
+      process.env.ADMIN_URL,
+      'https://chuya.in',
+      'https://www.chuya.in',
+      'https://admin.chuya.in'
+    ].filter(Boolean) as string[];
+
+    const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+    
+    const isAllowed = allowedOrigins.some(allowed => {
+      const normalizedAllowed = allowed.endsWith('/') ? allowed.slice(0, -1) : allowed;
+      return normalizedAllowed === normalizedOrigin;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS Blocked] Request from origin: ${origin}`);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-VERIFY', 'Accept', 'Origin', 'X-Requested-With'],
