@@ -16,6 +16,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const ReturnsPage = lazy(() => import('./pages/ReturnsPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 import { useAuthStore } from './stores/authStore'
+import { useCartStore } from './stores/cartStore'
 import { supabase } from '@chuya/shared/supabase'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        useCartStore.getState().syncAndMergeCart(session.user.id)
         // Fetch profile
         supabase
           .from('profiles')
@@ -51,8 +53,11 @@ export default function App() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        if (event === 'SIGNED_IN') {
+          useCartStore.getState().syncAndMergeCart(session.user.id)
+        }
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')

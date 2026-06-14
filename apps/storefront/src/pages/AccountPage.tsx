@@ -19,7 +19,7 @@ export default function AccountPage() {
   const user = useAuthStore((s) => s.user)
   const loading = useAuthStore((s) => s.loading)
   const setUser = useAuthStore((s) => s.setUser)
-  const clearCart = useCartStore((s) => s.clearCart)
+  const clearLocalCart = useCartStore((s) => s.clearLocalCart)
   const wishlistedItems = useWishlistStore((s) => s.items)
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('orders')
@@ -77,7 +77,7 @@ export default function AccountPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['addresses'] }),
   })
 
-  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); clearCart(); navigate('/') }
+  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); clearLocalCart(); navigate('/') }
 
   const statusBadge = (s: string) => {
     if (['paid','delivered'].includes(s)) return 'badge-success'
