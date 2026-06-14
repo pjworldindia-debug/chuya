@@ -74,9 +74,6 @@ app.use('/api/email', strictLimiter, emailRouter)
 app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
 
-import { fileURLToPath } from 'url'
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 // Bulletproof path resolution: whether in 'src' or 'dist', go up one level to find 'uploads'
 const uploadsPath = path.join(__dirname, '../uploads')
