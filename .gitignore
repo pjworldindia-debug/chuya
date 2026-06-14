@@ -2,8 +2,8 @@
 node_modules/
 .pnpm-store/
 
-# Build outputs
-dist/
+# Build outputs (tracked for deployment)
+# dist/ — NOT ignored, we push builds for VPS deployment
 build/
 *.tsbuildinfo
 
@@ -27,6 +27,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Uploads (binary assets, not in git)
+apps/api/uploads/
 
 # Supabase
 supabase/.temp/

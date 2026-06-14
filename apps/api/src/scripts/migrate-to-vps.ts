@@ -11,9 +11,14 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1)
 }
 
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+import WebSocket from 'ws'
 
-const uploadsDir = path.join(__dirname, '../../uploads')
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { persistSession: false },
+  realtime: { transport: WebSocket }
+})
+
+const uploadsDir = path.join(process.cwd(), 'apps/api/uploads')
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
