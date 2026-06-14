@@ -59,6 +59,12 @@ app.use(cors({
 
 app.use(express.json({ limit: '10kb' })) // Limit payload size to prevent DoS
 
+// Bulletproof path resolution: whether in 'src' or 'dist', go up one level to find 'uploads'
+const uploadsPath = path.join(__dirname, '../uploads')
+
+// Serve uploads folder as static files FIRST so it bypasses the rate limiter
+app.use('/api/uploads', express.static(uploadsPath))
+
 // Apply global rate limiting to all routes
 app.use('/api', globalLimiter)
 
@@ -73,13 +79,6 @@ app.use('/api/coupons', couponRouter)
 app.use('/api/email', strictLimiter, emailRouter)
 app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
-
-
-// Bulletproof path resolution: whether in 'src' or 'dist', go up one level to find 'uploads'
-const uploadsPath = path.join(__dirname, '../uploads')
-
-// Serve uploads folder as static files
-app.use('/api/uploads', express.static(uploadsPath))
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
