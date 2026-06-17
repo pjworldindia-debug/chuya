@@ -54,8 +54,13 @@ export default function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        if (event === 'SIGNED_IN') {
-          useCartStore.getState().syncAndMergeCart(session.user.id)
+        const cartStore = useCartStore.getState()
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          if (cartStore.lastSyncedUserId !== session.user.id && cartStore.items.length > 0) {
+            cartStore.syncAndMergeCart(session.user.id)
+          } else {
+            cartStore.fetchDbCart(session.user.id)
+          }
         }
         const { data: profile } = await supabase
           .from('profiles')

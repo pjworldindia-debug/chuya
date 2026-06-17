@@ -55,7 +55,11 @@ export default function HomePage() {
 
       {/* ── Hero Banner Carousel ── */}
       <section className="relative" id="hero-banner">
-        {heroBanners.length > 0 ? (
+        {loadingFeatured ? (
+          <div className="w-full h-[70vh] md:h-[85vh] bg-chuya flex items-center justify-center">
+            <div className="text-cream font-serif text-5xl md:text-7xl lg:text-8xl opacity-20 animate-pulse tracking-widest">CHUYA</div>
+          </div>
+        ) : heroBanners.length > 0 ? (
           <Swiper
             modules={[Autoplay, Pagination, EffectFade]}
             autoplay={{ delay: 5000, disableOnInteraction: false }}

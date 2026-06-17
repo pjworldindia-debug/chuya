@@ -29,6 +29,7 @@ const syncToDb = async (items: CartItemLocal[]) => {
       const { error } = await supabase.from('cart_items').delete().eq('user_id', user.id)
       if (error) console.error('Cart Delete All Error:', error)
     }
+    useCartStore.setState({ lastSyncedUserId: user.id })
   } catch (err) {
     console.error('Failed to sync cart mutations to DB:', err)
   }
@@ -36,6 +37,7 @@ const syncToDb = async (items: CartItemLocal[]) => {
 
 interface CartState {
   items: CartItemLocal[]
+  lastSyncedUserId: string | null
   addItem: (item: CartItemLocal) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
@@ -45,12 +47,14 @@ interface CartState {
   getSubtotal: () => number
   setItems: (items: CartItemLocal[]) => void
   syncAndMergeCart: (userId: string) => Promise<void>
+  fetchDbCart: (userId: string) => Promise<void>
 }
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      lastSyncedUserId: null,
 
       addItem: (item: CartItemLocal) => {
         set((state) => {
@@ -88,11 +92,11 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [] })
+        set({ items: [], lastSyncedUserId: null })
         syncToDb([])
       },
 
-      clearLocalCart: () => set({ items: [] }),
+      clearLocalCart: () => set({ items: [], lastSyncedUserId: null }),
 
       getItemCount: () => {
         return get().items.reduce((sum, item) => sum + item.quantity, 0)
@@ -138,9 +142,6 @@ export const useCartStore = create<CartState>()(
             })
           }
 
-          // DEBUG ALERT TO HELP USER
-          alert(`Cart Merge Debug:\nFound ${dbItems?.length || 0} items in Database.\nFound ${localItems.length} items in Guest Cart.`)
-
 
           localItems.forEach(localItem => {
             const existing = mergedMap.get(localItem.productId)
@@ -155,7 +156,7 @@ export const useCartStore = create<CartState>()(
           })
 
           const mergedItems = Array.from(mergedMap.values())
-          set({ items: mergedItems })
+          set({ items: mergedItems, lastSyncedUserId: userId })
 
           // Push merged back to DB
           if (mergedItems.length > 0) {
@@ -175,6 +176,36 @@ export const useCartStore = create<CartState>()(
           }
         } catch (error) {
           console.error('Failed to sync cart:', error)
+        }
+      },
+
+      fetchDbCart: async (userId: string) => {
+        try {
+          const { data: dbItems, error: fetchErr } = await supabase
+            .from('cart_items')
+            .select('quantity, product_id, products(name, price, images, stock)')
+            .eq('user_id', userId)
+            
+          if (fetchErr) return
+
+          const mappedItems: CartItemLocal[] = []
+          if (dbItems) {
+            dbItems.forEach((dbItem: any) => {
+              if (dbItem.products) {
+                mappedItems.push({
+                  productId: dbItem.product_id,
+                  name: dbItem.products.name,
+                  price: dbItem.products.price,
+                  image: dbItem.products.images?.[0] || '',
+                  quantity: dbItem.quantity,
+                  stock: dbItem.products.stock || 99
+                })
+              }
+            })
+          }
+          set({ items: mappedItems, lastSyncedUserId: userId })
+        } catch (err) {
+          console.error('Failed to fetch DB cart:', err)
         }
       },
     }),
