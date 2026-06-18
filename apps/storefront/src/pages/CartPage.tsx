@@ -274,17 +274,29 @@ export default function CartPage() {
                   </div>
 
                   <div className="pt-4">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      fullWidth
-                      loading={orderLoading}
-                      disabled={!user}
-                      id="place-order"
-                    >
-                      <Lock size={14} className="mr-2" />
-                      {user ? 'Place Order' : 'Sign In to Checkout'}
-                    </Button>
+                    {user ? (
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        fullWidth
+                        loading={orderLoading}
+                        id="place-order"
+                      >
+                        <Lock size={14} className="mr-2" />
+                        Place Order
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        fullWidth
+                        onClick={() => navigate('/auth', { state: { from: '/cart' } })}
+                        id="place-order-login"
+                      >
+                        <Lock size={14} className="mr-2" />
+                        Sign In to Checkout
+                      </Button>
+                    )}
                   </div>
 
                   {!user && (
