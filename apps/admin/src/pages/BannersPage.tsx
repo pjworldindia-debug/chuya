@@ -21,6 +21,15 @@ export default function BannersPage() {
   const [secondaryImgUrl, setSecondaryImgUrl] = useState('')
   const [hasSecondaryImage, setHasSecondaryImage] = useState(false)
 
+  const clearApiCache = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || ''
+      await fetch(`${apiUrl}/api/store/clear-cache`, { method: 'POST' })
+    } catch (err) {
+      console.error('Failed to clear API cache', err)
+    }
+  }
+
   const { data: banners, isLoading } = useQuery({
     queryKey: ['admin', 'banners'],
     queryFn: async () => {
@@ -71,6 +80,7 @@ export default function BannersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] })
+      clearApiCache()
       setDialogOpen(false)
     },
   })
@@ -81,12 +91,16 @@ export default function BannersPage() {
       const { error } = await supabase.from('banners').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] })
+      clearApiCache()
+    },
   })
 
   const toggleActive = async (banner: Banner) => {
     await supabase.from('banners').update({ is_active: !banner.is_active }).eq('id', banner.id)
     queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] })
+    clearApiCache()
   }
 
   const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

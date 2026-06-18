@@ -22,6 +22,15 @@ export default function ProductsPage() {
   const [colorNameInput, setColorNameInput] = useState('')
   const [colorUrlInput, setColorUrlInput] = useState('')
 
+  const clearApiCache = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || ''
+      await fetch(`${apiUrl}/api/store/clear-cache`, { method: 'POST' })
+    } catch (err) {
+      console.error('Failed to clear API cache', err)
+    }
+  }
+
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin', 'products'],
     queryFn: async () => {
@@ -137,6 +146,7 @@ export default function ProductsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      clearApiCache()
       setSheetOpen(false)
     },
   })
@@ -147,12 +157,16 @@ export default function ProductsPage() {
       const { error } = await supabase.from('products').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      clearApiCache()
+    },
   })
 
   const updateStock = async (id: string, stock: number) => {
     await supabase.from('products').update({ stock }).eq('id', id)
     queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+    clearApiCache()
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -16,6 +16,15 @@ export default function CategoriesPage() {
   const [uploading, setUploading] = useState(false)
   const [imageUrl, setImageUrl] = useState('')
 
+  const clearApiCache = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || ''
+      await fetch(`${apiUrl}/api/store/clear-cache`, { method: 'POST' })
+    } catch (err) {
+      console.error('Failed to clear API cache', err)
+    }
+  }
+
   const { data: categories, isLoading } = useQuery({
     queryKey: ['admin', 'categories'],
     queryFn: async () => {
@@ -54,6 +63,7 @@ export default function CategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      clearApiCache()
       setDialogOpen(false)
     },
   })
@@ -64,7 +74,10 @@ export default function CategoriesPage() {
       const { error } = await supabase.from('categories').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      clearApiCache()
+    },
   })
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

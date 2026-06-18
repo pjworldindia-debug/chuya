@@ -232,4 +232,13 @@ router.get('/product/:slug', async (req: Request, res: Response) => {
   }
 })
 
+/**
+ * POST /api/store/clear-cache
+ * Clears the API cache. Called by the admin panel after data mutations.
+ */
+router.post('/clear-cache', (_req: Request, res: Response) => {
+  cache.clear()
+  res.json({ success: true, message: 'Cache cleared successfully' })
+})
+
 export { router as storeRouter }
