@@ -148,11 +148,7 @@ export default function HomePage() {
           <p className="section-subtitle">
             Explore our curated collections, each designed for a different facet of your life.
           </p>
-          {totalProducts !== undefined && (
-            <p className="text-center text-sm tracking-widest uppercase text-muted mb-12">
-              Over {totalProducts} Products Available
-            </p>
-          )}
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 max-w-[1400px] mx-auto">
             {categories.map((cat) => (
               <Link
