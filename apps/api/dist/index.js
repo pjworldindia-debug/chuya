@@ -708,8 +708,12 @@ router4.get("/product/:slug", async (req, res) => {
   }
   try {
     const supabaseAdmin2 = getSupabaseAdmin4();
-    const { data: rawProduct, error } = await supabaseAdmin2.from("products").select("*").eq("slug", slug).eq("status", "active").single();
+    const { data: rawProduct, error } = await supabaseAdmin2.from("products").select("*").eq("slug", slug).eq("status", "active").maybeSingle();
     if (error) throw error;
+    if (!rawProduct) {
+      res.status(404).json({ success: false, error: "Product not found" });
+      return;
+    }
     const product = rawProduct;
     const [
       { data: relatedProducts },
@@ -729,6 +733,10 @@ router4.get("/product/:slug", async (req, res) => {
     console.error(`Error fetching product ${slug}:`, error);
     res.status(404).json({ success: false, error: "Product not found" });
   }
+});
+router4.post("/clear-cache", (_req, res) => {
+  cache.clear();
+  res.json({ success: true, message: "Cache cleared successfully" });
 });
 
 // src/routes/upload.ts
@@ -791,7 +799,9 @@ dotenv.config({ path: path2.resolve(__dirname2, "../.env") });
 var app = express();
 var PORT = process.env.PORT || 4e3;
 app.set("trust proxy", 1);
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 var globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1e3,
   // 15 minutes
@@ -811,17 +821,42 @@ var strictLimiter = rateLimit({
   legacyHeaders: false
 });
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    process.env.STOREFRONT_URL || "https://chuya.in",
-    process.env.ADMIN_URL || "https://admin.chuya.in"
-  ].filter(Boolean),
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+      "http://localhost:8080",
+      "http://localhost:8081",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+      "http://127.0.0.1:5173",
+      process.env.STOREFRONT_URL,
+      process.env.ADMIN_URL,
+      "https://chuya.in",
+      "https://www.chuya.in",
+      "https://admin.chuya.in"
+    ].filter(Boolean);
+    const normalizedOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
+    const isAllowed = allowedOrigins.some((allowed) => {
+      const normalizedAllowed = allowed.endsWith("/") ? allowed.slice(0, -1) : allowed;
+      return normalizedAllowed === normalizedOrigin;
+    });
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS Blocked] Request from origin: ${origin}`);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    }
+  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-VERIFY"]
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-VERIFY", "Accept", "Origin", "X-Requested-With"]
 }));
 app.use(express.json({ limit: "10kb" }));
+var uploadsPath = path2.join(__dirname2, "../uploads");
+app.use("/api/uploads", express.static(uploadsPath));
 app.use("/api", globalLimiter);
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
@@ -831,8 +866,6 @@ app.use("/api/coupons", router2);
 app.use("/api/email", strictLimiter, router3);
 app.use("/api/store", router4);
 app.use("/api/upload", router5);
-var uploadsPath = path2.join(__dirname2, "../uploads");
-app.use("/api/uploads", express.static(uploadsPath));
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ success: false, error: "Internal server error" });
