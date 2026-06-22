@@ -294,7 +294,7 @@ export default function CartPage() {
                         id="place-order-login"
                       >
                         <Lock size={14} className="mr-2" />
-                        Sign In to Checkout
+                        Sign In
                       </Button>
                     )}
                   </div>

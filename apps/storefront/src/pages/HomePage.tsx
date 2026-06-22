@@ -165,7 +165,7 @@ export default function HomePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <h3 className="font-serif text-xl md:text-2xl text-cream">{cat.name}</h3>
+                  <h3 className="font-serif text-xl md:text-2xl text-cream">{cat.name.replace(/\s*\(\d+\)\s*$/, '')}</h3>
                 </div>
               </Link>
             ))}
