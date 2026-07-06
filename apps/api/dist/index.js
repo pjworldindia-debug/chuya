@@ -367,7 +367,7 @@ router.all("/redirect/:orderId", async (req, res) => {
   try {
     await checkAndUpdateStatus(orderId);
   } catch (error) {
-    console.error("Redirect status check error:", error);
+    console.error("Redirect status check error:", error.message || error);
   }
   const fallbackBase = process.env.PHONEPE_ENV === "production" ? "https://chuya.in" : process.env.STOREFRONT_URL || "http://localhost:3000";
   res.redirect(302, `${fallbackBase}/order-success/${orderId}`);
@@ -867,6 +867,10 @@ app.use("/api/email", strictLimiter, router3);
 app.use("/api/store", router4);
 app.use("/api/upload", router5);
 app.use((err, _req, res, _next) => {
+  if (err.message && err.message.includes("Not allowed by CORS")) {
+    res.status(403).json({ success: false, error: "Forbidden" });
+    return;
+  }
   console.error("Unhandled error:", err);
   res.status(500).json({ success: false, error: "Internal server error" });
 });

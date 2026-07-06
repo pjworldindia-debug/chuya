@@ -325,8 +325,8 @@ router.all('/redirect/:orderId', async (req: Request, res: Response) => {
   try {
     // Proactively check status before redirecting to ensure it's updated immediately
     await checkAndUpdateStatus(orderId);
-  } catch (error) {
-    console.error('Redirect status check error:', error);
+  } catch (error: any) {
+    console.error('Redirect status check error:', error.message || error);
   }
 
   // Force the absolute URL, completely ignoring any frontendUrl query parameter.

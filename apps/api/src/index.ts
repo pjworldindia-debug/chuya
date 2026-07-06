@@ -111,6 +111,12 @@ app.use('/api/upload', uploadRouter)
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err.message && err.message.includes('Not allowed by CORS')) {
+    // Only send a clean 403 for bots, don't spam the logs with full stack traces
+    res.status(403).json({ success: false, error: 'Forbidden' })
+    return
+  }
+  
   console.error('Unhandled error:', err)
   res.status(500).json({ success: false, error: 'Internal server error' })
 })
