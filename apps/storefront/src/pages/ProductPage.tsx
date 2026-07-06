@@ -212,18 +212,21 @@ export default function ProductPage() {
               )}
               <h1 className="font-serif text-3xl md:text-4xl">{product.name}</h1>
 
-              <div className="flex items-center gap-3">
-                <span className="text-xl font-medium">{formatCurrency(product.price)}</span>
-                {hasDiscount && (
-                  <span className="text-lg text-muted line-through">
-                    {formatCurrency(product.compare_at_price!)}
-                  </span>
-                )}
-                {hasDiscount && (
-                  <span className="badge bg-taupe/20 text-chuya">
-                    Save {formatCurrency(product.compare_at_price! - product.price)}
-                  </span>
-                )}
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl font-medium">{formatCurrency(product.price)}</span>
+                  {hasDiscount && (
+                    <span className="text-lg text-muted line-through">
+                      {formatCurrency(product.compare_at_price!)}
+                    </span>
+                  )}
+                  {hasDiscount && (
+                    <span className="badge bg-taupe/20 text-chuya">
+                      Save {formatCurrency(product.compare_at_price! - product.price)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted mt-1">incl. of all taxes</div>
               </div>
 
               <p className="text-muted leading-relaxed">{product.description}</p>

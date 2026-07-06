@@ -53,13 +53,20 @@ export default function HomePage() {
         />
       </Helmet>
 
+      {/* ── Loading Transition Overlay ── */}
+      <div
+        className={`fixed inset-0 z-[100] bg-chuya flex items-center justify-center transition-opacity duration-1000 ${
+          loadingFeatured ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="text-cream font-serif text-5xl md:text-7xl lg:text-8xl opacity-30 animate-pulse tracking-widest">
+          CHUYA
+        </div>
+      </div>
+
       {/* ── Hero Banner Carousel ── */}
       <section className="relative" id="hero-banner">
-        {loadingFeatured ? (
-          <div className="w-full h-[70vh] md:h-[85vh] bg-chuya flex items-center justify-center">
-            <div className="text-cream font-serif text-5xl md:text-7xl lg:text-8xl opacity-20 animate-pulse tracking-widest">CHUYA</div>
-          </div>
-        ) : heroBanners.length > 0 ? (
+        {heroBanners.length > 0 ? (
           <Swiper
             modules={[Autoplay, Pagination, EffectFade]}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
@@ -281,20 +288,20 @@ export default function HomePage() {
               <>
                 {/* Desktop Asset */}
                 {storyBanners[0].video_url ? (
-                  <video src={storyBanners[0].video_url} autoPlay loop muted playsInline className="w-full h-[50vh] md:h-[70vh] object-cover hidden md:block" />
+                  <video src={storyBanners[0].video_url} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover hidden md:block" />
                 ) : (
-                  <img src={storyBanners[0].image_url} alt={storyBanners[0].title || 'CHUYA'} className="w-full h-[50vh] md:h-[70vh] object-cover hidden md:block" />
+                  <img src={storyBanners[0].image_url} alt={storyBanners[0].title || 'CHUYA'} className="absolute inset-0 w-full h-full object-cover hidden md:block" />
                 )}
 
                 {/* Mobile Asset */}
                 {storyBanners[0].mobile_video_url ? (
-                  <video src={storyBanners[0].mobile_video_url} autoPlay loop muted playsInline className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                  <video src={storyBanners[0].mobile_video_url} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover block md:hidden" />
                 ) : storyBanners[0].video_url ? (
-                  <video src={storyBanners[0].video_url} autoPlay loop muted playsInline className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                  <video src={storyBanners[0].video_url} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover block md:hidden" />
                 ) : storyBanners[0].secondary_image_url ? (
-                  <img src={storyBanners[0].secondary_image_url} alt={storyBanners[0].title || 'CHUYA'} className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                  <img src={storyBanners[0].secondary_image_url} alt={storyBanners[0].title || 'CHUYA'} className="absolute inset-0 w-full h-full object-cover block md:hidden" />
                 ) : (
-                  <img src={storyBanners[0].image_url} alt={storyBanners[0].title || 'CHUYA'} className="w-full h-[50vh] md:h-[70vh] object-cover block md:hidden" />
+                  <img src={storyBanners[0].image_url} alt={storyBanners[0].title || 'CHUYA'} className="absolute inset-0 w-full h-full object-cover block md:hidden" />
                 )}
                 <div
                   className="absolute inset-0"
