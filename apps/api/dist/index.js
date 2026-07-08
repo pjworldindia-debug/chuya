@@ -35,9 +35,9 @@ async function getAuthToken() {
   tokenExpiryTime = Date.now() + 24 * 60 * 60 * 1e3;
   return cachedToken;
 }
-async function createShiprocketOrder(supabaseAdmin2, orderId) {
+async function createShiprocketOrder(supabaseAdmin, orderId) {
   try {
-    const { data: rawOrder, error: orderError } = await supabaseAdmin2.from("orders").select("*").eq("id", orderId).single();
+    const { data: rawOrder, error: orderError } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
     const order = rawOrder;
     if (orderError || !order) {
       throw new Error(`Order ${orderId} not found`);
@@ -56,7 +56,7 @@ async function createShiprocketOrder(supabaseAdmin2, orderId) {
     let maxWidth = 20;
     let maxHeight = 10;
     for (const item of items) {
-      const { data: rawProduct } = await supabaseAdmin2.from("products").select("weight_kg, length_cm, width_cm, height_cm, sku").eq("id", item.productId).single();
+      const { data: rawProduct } = await supabaseAdmin.from("products").select("weight_kg, length_cm, width_cm, height_cm, sku").eq("id", item.productId).single();
       const product = rawProduct;
       if (product) {
         totalWeight += (product.weight_kg || 1) * item.quantity;
@@ -174,7 +174,7 @@ async function getPhonePeToken() {
   return cachedToken2;
 }
 router.post("/initiate", async (req, res) => {
-  const supabaseAdmin2 = getSupabaseAdmin();
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const {
       orderId,
@@ -195,7 +195,7 @@ router.post("/initiate", async (req, res) => {
       res.status(400).json({ success: false, error: "Missing required fields" });
       return;
     }
-    const { error: orderError } = await supabaseAdmin2.from("orders").insert({
+    const { error: orderError } = await supabaseAdmin.from("orders").insert({
       id: orderId,
       user_id: userId || null,
       guest_email: customerEmail || null,
@@ -216,9 +216,10 @@ router.post("/initiate", async (req, res) => {
       return;
     }
     if (couponCode) {
-      await supabaseAdmin2.rpc("increment_coupon_used", { coupon_code: couponCode }).catch(() => {
+      const { error: couponError } = await supabaseAdmin.rpc("increment_coupon_used", { coupon_code: couponCode });
+      if (couponError) {
         console.warn("Failed to increment coupon usage");
-      });
+      }
     }
     const accessToken = await getPhonePeToken();
     const amountInPaise = Math.round(amount * 100);
@@ -268,6 +269,7 @@ router.post("/initiate", async (req, res) => {
   }
 });
 async function checkAndUpdateStatus(orderId) {
+  const supabaseAdmin = getSupabaseAdmin();
   const accessToken = await getPhonePeToken();
   const statusUrl = `${URLS.status}/${orderId}/status`;
   const response = await fetch(statusUrl, {
@@ -281,40 +283,17 @@ async function checkAndUpdateStatus(orderId) {
   const state = phonePeData.data?.state || phonePeData.state;
   if (state) {
     const paymentStatus = state === "COMPLETED" ? "paid" : state === "FAILED" ? "failed" : "pending";
-    const { data: rawCurrentOrder } = await supabaseAdmin.from("orders").select("payment_status, items, timeline").eq("id", orderId).single();
-    const currentOrder = rawCurrentOrder;
-    if (currentOrder && currentOrder.payment_status !== paymentStatus) {
-      const { error: updateError } = await supabaseAdmin.from("orders").update({
-        payment_status: paymentStatus,
-        fulfilment_status: paymentStatus === "paid" ? "confirmed" : "placed"
-      }).eq("id", orderId);
-      if (updateError) {
-        console.error("Order update error:", updateError);
+    if (paymentStatus === "paid") {
+      const { data, error } = await supabaseAdmin.rpc("mark_order_paid_and_decrement_stock", { p_order_id: orderId });
+      if (error) {
+        console.error("RPC Error processing paid order:", error);
+        throw new Error("Failed to process successful payment idempotently");
       }
-      if (paymentStatus === "paid" && currentOrder.payment_status !== "paid") {
-        if (Array.isArray(currentOrder.items)) {
-          for (const item of currentOrder.items) {
-            const productId = item.productId;
-            if (!productId) continue;
-            const { data: rawProduct } = await supabaseAdmin.from("products").select("stock").eq("id", productId).single();
-            const product = rawProduct;
-            if (product) {
-              const newStock = Math.max(0, product.stock - item.quantity);
-              await supabaseAdmin.from("products").update({ stock: newStock }).eq("id", productId);
-            }
-          }
-        }
-      }
-      const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : [];
-      timeline.push({
-        status: paymentStatus === "paid" ? "confirmed" : paymentStatus,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        note: paymentStatus === "paid" ? "Payment confirmed" : `Payment ${paymentStatus}`
-      });
-      await supabaseAdmin.from("orders").update({ timeline }).eq("id", orderId);
-      if (paymentStatus === "paid" && currentOrder.payment_status !== "paid") {
+      if (data === "processed") {
         createShiprocketOrder(supabaseAdmin, orderId).then(async (shiprocketRes) => {
           if (shiprocketRes) {
+            const { data: currentOrder } = await supabaseAdmin.from("orders").select("timeline").eq("id", orderId).single();
+            const timeline = Array.isArray(currentOrder?.timeline) ? currentOrder.timeline : [];
             const newTimeline = [...timeline, {
               status: "confirmed",
               timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -322,7 +301,27 @@ async function checkAndUpdateStatus(orderId) {
             }];
             await supabaseAdmin.from("orders").update({ timeline: newTimeline }).eq("id", orderId);
           }
+        }).catch((err) => {
+          console.error("Shiprocket creation error:", err);
         });
+      }
+    } else {
+      const { data: currentOrder } = await supabaseAdmin.from("orders").select("payment_status, timeline").eq("id", orderId).single();
+      if (currentOrder && currentOrder.payment_status !== paymentStatus) {
+        const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : [];
+        timeline.push({
+          status: paymentStatus,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          note: `Payment ${paymentStatus}`
+        });
+        const { error: updateError } = await supabaseAdmin.from("orders").update({
+          payment_status: paymentStatus,
+          timeline
+        }).eq("id", orderId);
+        if (updateError) {
+          console.error("Order update error:", updateError);
+          throw new Error("Failed to update order status");
+        }
       }
     }
     return paymentStatus;
@@ -344,7 +343,7 @@ router.get("/status/:orderId", async (req, res) => {
   }
 });
 router.post("/callback", async (req, res) => {
-  const supabaseAdmin2 = getSupabaseAdmin();
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const { response } = req.body;
     if (response) {
@@ -435,7 +434,7 @@ function getSupabaseAdmin2() {
   return _supabaseAdmin2;
 }
 router2.post("/validate", async (req, res) => {
-  const supabaseAdmin2 = getSupabaseAdmin2();
+  const supabaseAdmin = getSupabaseAdmin2();
   try {
     const { code, subtotal } = req.body;
     if (!code || typeof subtotal !== "number") {
@@ -446,7 +445,7 @@ router2.post("/validate", async (req, res) => {
     const cacheKey = `coupon_${upperCode}`;
     let coupon = cache.get(cacheKey);
     if (!coupon) {
-      const { data, error } = await supabaseAdmin2.from("coupons").select("*").eq("code", upperCode).eq("is_active", true).single();
+      const { data, error } = await supabaseAdmin.from("coupons").select("*").eq("code", upperCode).eq("is_active", true).single();
       if (error || !data) {
         res.json({ valid: false, discount: 0, error: "Coupon not found" });
         return;
@@ -566,8 +565,8 @@ router3.post("/newsletter", async (req, res) => {
       res.status(400).json({ success: false, error: "Email is required" });
       return;
     }
-    const supabaseAdmin2 = getSupabaseAdmin3();
-    const { error: insertError } = await supabaseAdmin2.from("subscribers").insert({ email });
+    const supabaseAdmin = getSupabaseAdmin3();
+    const { error: insertError } = await supabaseAdmin.from("subscribers").insert({ email });
     if (insertError) {
       console.warn("Subscriber insert failed (might already exist):", insertError);
     }
@@ -619,7 +618,7 @@ router4.get("/home", async (_req, res) => {
   }
   try {
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const supabaseAdmin2 = getSupabaseAdmin4();
+    const supabaseAdmin = getSupabaseAdmin4();
     const [
       { data: banners },
       { data: featuredProducts },
@@ -627,11 +626,11 @@ router4.get("/home", async (_req, res) => {
       { data: categories },
       { count: totalProducts }
     ] = await Promise.all([
-      supabaseAdmin2.from("banners").select("*").eq("is_active", true).or(`start_date.is.null,start_date.lte.${now}`).or(`end_date.is.null,end_date.gte.${now}`).order("display_order", { ascending: true }),
-      supabaseAdmin2.from("products").select("*").eq("status", "active").eq("is_featured", true).limit(6),
-      supabaseAdmin2.from("products").select("*").eq("status", "active").eq("is_new_arrival", true).order("created_at", { ascending: false }).limit(4),
-      supabaseAdmin2.from("categories").select("*").order("display_order", { ascending: true }),
-      supabaseAdmin2.from("products").select("*", { count: "exact", head: true }).eq("status", "active")
+      supabaseAdmin.from("banners").select("*").eq("is_active", true).or(`start_date.is.null,start_date.lte.${now}`).or(`end_date.is.null,end_date.gte.${now}`).order("display_order", { ascending: true }),
+      supabaseAdmin.from("products").select("*").eq("status", "active").eq("is_featured", true).limit(6),
+      supabaseAdmin.from("products").select("*").eq("status", "active").eq("is_new_arrival", true).order("created_at", { ascending: false }).limit(4),
+      supabaseAdmin.from("categories").select("*").order("display_order", { ascending: true }),
+      supabaseAdmin.from("products").select("*", { count: "exact", head: true }).eq("status", "active")
     ]);
     const responseData = {
       banners: banners || [],
@@ -658,8 +657,8 @@ router4.get("/shop", async (req, res) => {
   try {
     const pageNum = parseInt(pageParam, 10) || 0;
     const limitNum = parseInt(limit, 10) || 12;
-    const supabaseAdmin2 = getSupabaseAdmin4();
-    let query = supabaseAdmin2.from("products").select("*", { count: "exact" }).eq("status", "active");
+    const supabaseAdmin = getSupabaseAdmin4();
+    let query = supabaseAdmin.from("products").select("*", { count: "exact" }).eq("status", "active");
     if (category) query = query.eq("category_id", category);
     if (minPrice) query = query.gte("price", parseFloat(minPrice));
     if (maxPrice) query = query.lte("price", parseFloat(maxPrice));
@@ -684,7 +683,7 @@ router4.get("/shop", async (req, res) => {
     query = query.range(from, to);
     const [productsResult, { data: categories }] = await Promise.all([
       query,
-      supabaseAdmin2.from("categories").select("*").order("display_order", { ascending: true })
+      supabaseAdmin.from("categories").select("*").order("display_order", { ascending: true })
     ]);
     const responseData = {
       products: productsResult.data || [],
@@ -707,8 +706,8 @@ router4.get("/product/:slug", async (req, res) => {
     return;
   }
   try {
-    const supabaseAdmin2 = getSupabaseAdmin4();
-    const { data: rawProduct, error } = await supabaseAdmin2.from("products").select("*").eq("slug", slug).eq("status", "active").maybeSingle();
+    const supabaseAdmin = getSupabaseAdmin4();
+    const { data: rawProduct, error } = await supabaseAdmin.from("products").select("*").eq("slug", slug).eq("status", "active").maybeSingle();
     if (error) throw error;
     if (!rawProduct) {
       res.status(404).json({ success: false, error: "Product not found" });
@@ -719,8 +718,8 @@ router4.get("/product/:slug", async (req, res) => {
       { data: relatedProducts },
       { data: similarProducts }
     ] = await Promise.all([
-      product.category_id ? supabaseAdmin2.from("products").select("*").eq("status", "active").eq("category_id", product.category_id).neq("id", product.id).limit(4) : Promise.resolve({ data: [] }),
-      product.related_product_slugs && product.related_product_slugs.length > 0 ? supabaseAdmin2.from("products").select("*").eq("status", "active").in("slug", product.related_product_slugs) : Promise.resolve({ data: [] })
+      product.category_id ? supabaseAdmin.from("products").select("*").eq("status", "active").eq("category_id", product.category_id).neq("id", product.id).limit(4) : Promise.resolve({ data: [] }),
+      product.related_product_slugs && product.related_product_slugs.length > 0 ? supabaseAdmin.from("products").select("*").eq("status", "active").in("slug", product.related_product_slugs) : Promise.resolve({ data: [] })
     ]);
     const responseData = {
       product,
@@ -790,6 +789,22 @@ router5.delete("/:filename", (req, res) => {
   }
 });
 
+// src/utils/logger.ts
+import pino from "pino";
+import pinoHttp from "pino-http";
+import { v4 as uuidv4 } from "uuid";
+var logger = pino({
+  level: process.env.LOG_LEVEL || "info"
+});
+var loggerMiddleware = pinoHttp({
+  logger,
+  genReqId: (req, res) => {
+    const id = req.headers["x-request-id"] || uuidv4();
+    res.setHeader("X-Request-Id", id);
+    return id;
+  }
+});
+
 // src/index.ts
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -797,6 +812,7 @@ var __filename2 = fileURLToPath2(import.meta.url);
 var __dirname2 = path2.dirname(__filename2);
 dotenv.config({ path: path2.resolve(__dirname2, "../.env") });
 var app = express();
+app.use(loggerMiddleware);
 var PORT = process.env.PORT || 4e3;
 app.set("trust proxy", 1);
 app.use(helmet({
@@ -866,14 +882,14 @@ app.use("/api/coupons", router2);
 app.use("/api/email", strictLimiter, router3);
 app.use("/api/store", router4);
 app.use("/api/upload", router5);
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, _next) => {
   if (err.message && err.message.includes("Not allowed by CORS")) {
     res.status(403).json({ success: false, error: "Forbidden" });
     return;
   }
-  console.error("Unhandled error:", err);
+  req.log ? req.log.error(err, "Unhandled error") : logger.error(err, "Unhandled error");
   res.status(500).json({ success: false, error: "Internal server error" });
 });
 app.listen(PORT, () => {
-  console.log(`\u{1F680} CHUYA API running on http://localhost:${PORT}`);
+  logger.info(`\u{1F680} CHUYA API running on http://localhost:${PORT}`);
 });

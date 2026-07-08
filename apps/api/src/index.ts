@@ -15,11 +15,13 @@ import { couponRouter } from './routes/coupons.js'
 import { emailRouter } from './routes/email.js'
 import { storeRouter } from './routes/store.js'
 import { uploadRouter } from './routes/upload.js'
+import { logger, loggerMiddleware } from './utils/logger.js'
 
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 
 const app = express()
+app.use(loggerMiddleware)
 const PORT = process.env.PORT || 4000
 
 // Trust proxy if running behind a reverse proxy (like Nginx on VPS)
@@ -110,17 +112,17 @@ app.use('/api/store', storeRouter)
 app.use('/api/upload', uploadRouter)
 
 // Error handler
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err.message && err.message.includes('Not allowed by CORS')) {
     // Only send a clean 403 for bots, don't spam the logs with full stack traces
     res.status(403).json({ success: false, error: 'Forbidden' })
     return
   }
   
-  console.error('Unhandled error:', err)
+  req.log ? req.log.error(err, 'Unhandled error') : logger.error(err, 'Unhandled error')
   res.status(500).json({ success: false, error: 'Internal server error' })
 })
 
 app.listen(PORT, () => {
-  console.log(`🚀 CHUYA API running on http://localhost:${PORT}`)
+  logger.info(`🚀 CHUYA API running on http://localhost:${PORT}`)
 })

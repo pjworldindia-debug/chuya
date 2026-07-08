@@ -112,9 +112,10 @@ router.post('/initiate', async (req: Request, res: Response) => {
 
     // Increment coupon used_count if applicable
     if (couponCode) {
-      await supabaseAdmin.rpc('increment_coupon_used', { coupon_code: couponCode }).catch(() => {
+      const { error: couponError } = await supabaseAdmin.rpc('increment_coupon_used', { coupon_code: couponCode })
+      if (couponError) {
         console.warn('Failed to increment coupon usage')
-      })
+      }
     }
 
     // Get Auth Token
@@ -146,7 +147,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
       body: JSON.stringify(payload)
     })
     
-    const phonePeData = await response.json()
+    const phonePeData = (await response.json()) as any
     console.log('PhonePe Response:', phonePeData)
 
     if (phonePeData.redirectUrl) {
@@ -169,6 +170,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
 })
 
 async function checkAndUpdateStatus(orderId: string) {
+  const supabaseAdmin = getSupabaseAdmin()
   const accessToken = await getPhonePeToken()
   
   // Status endpoint: /apis/pg/checkout/v2/order/{merchantOrderId}/status
@@ -181,72 +183,27 @@ async function checkAndUpdateStatus(orderId: string) {
     }
   })
 
-  const phonePeData = await response.json()
+  const phonePeData = (await response.json()) as any
   console.log(`PhonePe Status Response for ${orderId}:`, phonePeData)
   
   const state = phonePeData.data?.state || phonePeData.state
   if (state) {
     const paymentStatus = state === 'COMPLETED' ? 'paid' : state === 'FAILED' ? 'failed' : 'pending'
 
-    // Check current status before updating to avoid duplicate decrements
-    const { data: rawCurrentOrder } = await supabaseAdmin
-      .from('orders')
-      .select('payment_status, items, timeline')
-      .eq('id', orderId)
-      .single()
+    if (paymentStatus === 'paid') {
+      const { data, error } = await supabaseAdmin.rpc('mark_order_paid_and_decrement_stock', { p_order_id: orderId });
       
-    const currentOrder = rawCurrentOrder as any
-
-    if (currentOrder && currentOrder.payment_status !== paymentStatus) {
-      // Update order
-      const { error: updateError } = await supabaseAdmin
-        .from('orders')
-        .update({
-          payment_status: paymentStatus,
-          fulfilment_status: paymentStatus === 'paid' ? 'confirmed' : 'placed',
-        })
-        .eq('id', orderId)
-
-      if (updateError) {
-        console.error('Order update error:', updateError)
+      if (error) {
+        console.error('RPC Error processing paid order:', error);
+        throw new Error('Failed to process successful payment idempotently');
       }
-
-      // Decrement stock if newly paid
-      if (paymentStatus === 'paid' && currentOrder.payment_status !== 'paid') {
-        if (Array.isArray(currentOrder.items)) {
-          for (const item of currentOrder.items as { productId: string; quantity: number }[]) {
-            const productId = item.productId
-            if (!productId) continue
-            
-            const { data: rawProduct } = await supabaseAdmin
-              .from('products')
-              .select('stock')
-              .eq('id', productId)
-              .single()
-              
-            const product = rawProduct as any
-              
-            if (product) {
-              const newStock = Math.max(0, product.stock - item.quantity)
-              await supabaseAdmin.from('products').update({ stock: newStock }).eq('id', productId)
-            }
-          }
-        }
-      }
-
-      // Add timeline entry
-      const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : []
-      timeline.push({
-        status: paymentStatus === 'paid' ? 'confirmed' : paymentStatus,
-        timestamp: new Date().toISOString(),
-        note: paymentStatus === 'paid' ? 'Payment confirmed' : `Payment ${paymentStatus}`,
-      })
-      await supabaseAdmin.from('orders').update({ timeline }).eq('id', orderId)
-
-      // Automatically push to Shiprocket if paid
-      if (paymentStatus === 'paid' && currentOrder.payment_status !== 'paid') {
+      
+      // Push to shiprocket only if we just processed it
+      if (data === 'processed') {
         createShiprocketOrder(supabaseAdmin, orderId).then(async (shiprocketRes: any) => {
           if (shiprocketRes) {
+             const { data: currentOrder } = await supabaseAdmin.from('orders').select('timeline').eq('id', orderId).single();
+             const timeline = Array.isArray(currentOrder?.timeline) ? currentOrder.timeline : [];
              const newTimeline = [...timeline, {
                status: 'confirmed',
                timestamp: new Date().toISOString(),
@@ -254,7 +211,37 @@ async function checkAndUpdateStatus(orderId: string) {
              }]
              await supabaseAdmin.from('orders').update({ timeline: newTimeline }).eq('id', orderId)
           }
+        }).catch((err: any) => {
+          console.error('Shiprocket creation error:', err);
+        });
+      }
+    } else {
+      // For non-paid statuses, just update the order if it's not already that status
+      const { data: currentOrder } = await supabaseAdmin
+        .from('orders')
+        .select('payment_status, timeline')
+        .eq('id', orderId)
+        .single()
+        
+      if (currentOrder && currentOrder.payment_status !== paymentStatus) {
+        const timeline = Array.isArray(currentOrder.timeline) ? currentOrder.timeline : []
+        timeline.push({
+          status: paymentStatus,
+          timestamp: new Date().toISOString(),
+          note: `Payment ${paymentStatus}`,
         })
+        const { error: updateError } = await supabaseAdmin
+          .from('orders')
+          .update({
+            payment_status: paymentStatus,
+            timeline
+          })
+          .eq('id', orderId)
+
+        if (updateError) {
+          console.error('Order update error:', updateError)
+          throw new Error('Failed to update order status');
+        }
       }
     }
 
