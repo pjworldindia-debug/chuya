@@ -235,45 +235,49 @@ export default function CartPage() {
                 <div className="h-px bg-chuya/10 my-6" />
 
                 {/* Shipping Address Form */}
-                <h3 className="text-xs tracking-[0.2em] uppercase text-muted mb-4">Shipping Address</h3>
+                {user && <h3 className="text-xs tracking-[0.2em] uppercase text-muted mb-4">Shipping Address</h3>}
                 <form onSubmit={handleSubmit(onPlaceOrder)} className="space-y-3">
-                  <div>
-                    <input {...register('name')} placeholder="Full Name *" className="input" id="checkout-name" />
-                    {errors.name && <p className="text-red-500 text-xs mt-0.5">{errors.name.message}</p>}
-                  </div>
-                  <div>
-                    <input {...register('phone')} placeholder="Phone (10 digits) *" className="input" id="checkout-phone" />
-                    {errors.phone && <p className="text-red-500 text-xs mt-0.5">{errors.phone.message}</p>}
-                  </div>
-                  <div>
-                    <input {...register('line1')} placeholder="Address Line 1 *" className="input" id="checkout-line1" />
-                    {errors.line1 && <p className="text-red-500 text-xs mt-0.5">{errors.line1.message}</p>}
-                  </div>
-                  <input {...register('line2')} placeholder="Address Line 2 (optional)" className="input" id="checkout-line2" />
-                  <div>
-                    <input
-                      {...register('pincode')}
-                      placeholder="PIN Code *"
-                      className="input"
-                      maxLength={6}
-                      onBlur={handlePincodeBlur}
-                      id="checkout-pincode"
-                    />
-                    {errors.pincode && <p className="text-red-500 text-xs mt-0.5">{errors.pincode.message}</p>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <input {...register('city')} placeholder="City *" className="input" id="checkout-city" />
-                      {errors.city && <p className="text-red-500 text-xs mt-0.5">{errors.city.message}</p>}
-                    </div>
-                    <div>
-                      <select {...register('state')} className="input" id="checkout-state" defaultValue="">
-                        <option value="" disabled>State *</option>
-                        {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      {errors.state && <p className="text-red-500 text-xs mt-0.5">{errors.state.message}</p>}
-                    </div>
-                  </div>
+                  {user && (
+                    <>
+                      <div>
+                        <input {...register('name')} placeholder="Full Name *" className="input" id="checkout-name" />
+                        {errors.name && <p className="text-red-500 text-xs mt-0.5">{errors.name.message}</p>}
+                      </div>
+                      <div>
+                        <input {...register('phone')} placeholder="Phone (10 digits) *" className="input" id="checkout-phone" />
+                        {errors.phone && <p className="text-red-500 text-xs mt-0.5">{errors.phone.message}</p>}
+                      </div>
+                      <div>
+                        <input {...register('line1')} placeholder="Address Line 1 *" className="input" id="checkout-line1" />
+                        {errors.line1 && <p className="text-red-500 text-xs mt-0.5">{errors.line1.message}</p>}
+                      </div>
+                      <input {...register('line2')} placeholder="Address Line 2 (optional)" className="input" id="checkout-line2" />
+                      <div>
+                        <input
+                          {...register('pincode')}
+                          placeholder="PIN Code *"
+                          className="input"
+                          maxLength={6}
+                          onBlur={handlePincodeBlur}
+                          id="checkout-pincode"
+                        />
+                        {errors.pincode && <p className="text-red-500 text-xs mt-0.5">{errors.pincode.message}</p>}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <input {...register('city')} placeholder="City *" className="input" id="checkout-city" />
+                          {errors.city && <p className="text-red-500 text-xs mt-0.5">{errors.city.message}</p>}
+                        </div>
+                        <div>
+                          <select {...register('state')} className="input" id="checkout-state" defaultValue="">
+                            <option value="" disabled>State *</option>
+                            {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          {errors.state && <p className="text-red-500 text-xs mt-0.5">{errors.state.message}</p>}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="pt-4">
                     {user ? (
@@ -296,16 +300,10 @@ export default function CartPage() {
                         id="place-order-login"
                       >
                         <Lock size={14} className="mr-2" />
-                        Sign In
+                        Sign In to Checkout
                       </Button>
                     )}
                   </div>
-
-                  {!user && (
-                    <p className="text-center text-xs text-muted mt-2">
-                      <Link to="/auth" state={{ from: '/cart' }} className="underline hover:text-chuya">Sign in</Link> to place your order
-                    </p>
-                  )}
 
                   <div className="flex items-center justify-center gap-2 text-xs text-muted mt-3">
                     <Lock size={12} />
