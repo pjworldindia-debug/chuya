@@ -4,7 +4,15 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@chuya/shared/database.types'
 
 const router = Router()
-const resend = new Resend(process.env.RESEND_API_KEY || '')
+
+let resendInstance: Resend | null = null
+const getResend = () => {
+  if (!resendInstance) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY || '')
+  }
+  return resendInstance
+}
+
 const getSupabaseAdmin = () => createClient<Database>(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -36,7 +44,7 @@ router.post('/order-confirmation', async (req: Request, res: Response) => {
 
     const address = shippingAddress as { name: string; line1: string; city: string; state: string; pincode: string }
 
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from: 'CHUYA <orders@chuya.in>',
       to: [to],
       subject: `Order Confirmed — #${orderId.slice(0, 8)}`,
@@ -103,7 +111,7 @@ router.post('/newsletter', async (req: Request, res: Response) => {
       console.warn('Subscriber insert failed (might already exist):', insertError)
     }
 
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from: 'CHUYA <orders@chuya.in>',
       to: ['pjworldindia@gmail.com'],
       subject: 'New Newsletter Subscriber',
