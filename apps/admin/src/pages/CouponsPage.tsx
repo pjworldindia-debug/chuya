@@ -17,6 +17,7 @@ const couponSchema = z.object({
   max_uses: z.coerce.number().nullable().default(null),
   expires_at: z.string().nullable().default(null),
   is_active: z.boolean().default(true),
+  is_prepaid_only: z.boolean().default(false),
 })
 
 type CouponForm = z.infer<typeof couponSchema>
@@ -29,7 +30,7 @@ export default function CouponsPage() {
 
   const form = useForm<CouponForm>({
     resolver: zodResolver(couponSchema),
-    defaultValues: { discount_type: 'percent', is_active: true, min_order_value: 0 },
+    defaultValues: { discount_type: 'percent', is_active: true, is_prepaid_only: false, min_order_value: 0 },
   })
 
   // Fetch coupons
@@ -103,7 +104,7 @@ export default function CouponsPage() {
 
   const openCreate = () => {
     setEditingCoupon(null)
-    form.reset({ discount_type: 'percent', is_active: true, min_order_value: 0, code: '', discount_value: 0, max_uses: null, expires_at: null })
+    form.reset({ discount_type: 'percent', is_active: true, is_prepaid_only: false, min_order_value: 0, code: '', discount_value: 0, max_uses: null, expires_at: null })
     setShowModal(true)
   }
 
@@ -117,6 +118,7 @@ export default function CouponsPage() {
       max_uses: coupon.max_uses,
       expires_at: coupon.expires_at ? coupon.expires_at.split('T')[0] : null,
       is_active: coupon.is_active,
+      is_prepaid_only: coupon.is_prepaid_only,
     })
     setShowModal(true)
   }
@@ -169,7 +171,7 @@ export default function CouponsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Code</th><th>Discount</th><th>Min Order</th><th>Uses</th><th>Expires</th><th>Status</th><th>Actions</th>
+                <th>Code</th><th>Discount</th><th>Min Order</th><th>Uses</th><th>Expires</th><th>Prepaid Only</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -193,6 +195,13 @@ export default function CouponsPage() {
                       </span>
                     ) : (
                       <span className="text-gray-400">No expiry</span>
+                    )}
+                  </td>
+                  <td>
+                    {coupon.is_prepaid_only ? (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Yes</span>
+                    ) : (
+                      <span className="text-xs text-gray-400">No</span>
                     )}
                   </td>
                   <td>
@@ -305,6 +314,16 @@ export default function CouponsPage() {
                     className="admin-input mt-1"
                   />
                   <p className="text-[10px] text-gray-400 mt-0.5">Leave empty for no expiry</p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-5">
+                  <input
+                    {...form.register('is_prepaid_only')}
+                    type="checkbox"
+                    id="coupon-prepaid"
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="coupon-prepaid" className="text-sm text-gray-700">Prepaid Orders Only</label>
                 </div>
 
                 <div className="flex items-center gap-2 pt-5">

@@ -10,6 +10,8 @@ import { formatCurrency, GST_RATE } from '@chuya/shared/constants'
 import { INDIAN_STATES } from '@chuya/shared/types'
 import { addressSchema, type AddressFormData } from '@chuya/shared/schemas'
 import Button from '../components/Button'
+import { supabase } from '@chuya/shared/supabase'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export default function CartPage() {
   const navigate = useNavigate()
@@ -20,6 +22,10 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online')
+  const [saveAddress, setSaveAddress] = useState(true)
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('new')
+  const queryClient = useQueryClient()
 
   const subtotal = getSubtotal()
   const gst = 0 // Math.round(subtotal * GST_RATE)
@@ -33,6 +39,48 @@ export default function CartPage() {
   } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
   })
+
+  // Fetch saved addresses
+  const { data: savedAddresses = [] } = useQuery({
+    queryKey: ['addresses', user?.id],
+    queryFn: async () => {
+      if (!user) return []
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!user,
+  })
+
+  // Pre-fill form when an address is selected
+  const handleAddressSelect = (id: string) => {
+    setSelectedAddressId(id)
+    if (id !== 'new') {
+      const addr = savedAddresses.find(a => a.id === id)
+      if (addr) {
+        setValue('name', addr.name)
+        setValue('phone', addr.phone)
+        setValue('line1', addr.line1)
+        setValue('line2', addr.line2 || '')
+        setValue('city', addr.city)
+        setValue('state', addr.state)
+        setValue('pincode', addr.pincode)
+      }
+    } else {
+      // Clear form for new address
+      setValue('name', '')
+      setValue('phone', '')
+      setValue('line1', '')
+      setValue('line2', '')
+      setValue('city', '')
+      setValue('state', '')
+      setValue('pincode', '')
+    }
+  }
 
   const handlePincodeBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const pin = e.target.value
@@ -59,7 +107,7 @@ export default function CartPage() {
       const res = await fetch(`${apiUrl}/api/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode.trim().toUpperCase(), subtotal }),
+        body: JSON.stringify({ code: couponCode.trim().toUpperCase(), subtotal, paymentMethod }),
       })
       const data = await res.json()
       if (data.valid) {
@@ -84,6 +132,24 @@ export default function CartPage() {
 
     setOrderLoading(true)
     try {
+      // Optionally save address first
+      if (user && selectedAddressId === 'new' && saveAddress) {
+        const { error } = await supabase.from('addresses').insert({
+          user_id: user.id,
+          name: addressData.name,
+          phone: addressData.phone,
+          line1: addressData.line1,
+          line2: addressData.line2 || null,
+          city: addressData.city,
+          state: addressData.state,
+          pincode: addressData.pincode,
+          is_default: false
+        })
+        if (!error) {
+          queryClient.invalidateQueries({ queryKey: ['addresses', user.id] })
+        }
+      }
+
       const apiUrl = import.meta.env.VITE_API_URL || ''
       const orderIdStr = crypto.randomUUID().replace(/-/g, '')
       const res = await fetch(`${apiUrl}/api/payment/initiate`, {
@@ -110,6 +176,7 @@ export default function CartPage() {
           callbackUrl: `${apiUrl}/api/payment/callback`,
           customerPhone: addressData.phone,
           customerEmail: user.email,
+          paymentMethod,
         }),
       })
       const data = await res.json()
@@ -234,11 +301,61 @@ export default function CartPage() {
 
                 <div className="h-px bg-chuya/10 my-6" />
 
+                {/* Payment Method */}
+                <h3 className="text-xs tracking-[0.2em] uppercase text-muted mb-4 mt-6">Payment Method</h3>
+                <div className="space-y-2 mb-6">
+                  <label className="flex items-center gap-3 p-3 border rounded cursor-pointer hover:bg-gray-50">
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="online" 
+                      checked={paymentMethod === 'online'}
+                      onChange={() => setPaymentMethod('online')}
+                      className="w-4 h-4"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">Online Payment (PhonePe)</div>
+                      <div className="text-xs text-muted">UPI, Cards, NetBanking</div>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 border rounded cursor-pointer hover:bg-gray-50">
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="cod" 
+                      checked={paymentMethod === 'cod'}
+                      onChange={() => setPaymentMethod('cod')}
+                      className="w-4 h-4"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">Cash on Delivery</div>
+                      <div className="text-xs text-muted">Pay when you receive the order</div>
+                    </div>
+                  </label>
+                </div>
+
                 {/* Shipping Address Form */}
                 {user && <h3 className="text-xs tracking-[0.2em] uppercase text-muted mb-4">Shipping Address</h3>}
                 <form onSubmit={handleSubmit(onPlaceOrder)} className="space-y-3">
+                  {user && savedAddresses.length > 0 && (
+                    <div className="mb-4">
+                      <select 
+                        className="input" 
+                        value={selectedAddressId}
+                        onChange={(e) => handleAddressSelect(e.target.value)}
+                      >
+                        <option value="new">+ Add New Address</option>
+                        {savedAddresses.map(addr => (
+                          <option key={addr.id} value={addr.id}>
+                            {addr.name} - {addr.line1}, {addr.city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   {user && (
-                    <>
+                    <div className={selectedAddressId !== 'new' ? 'opacity-50 pointer-events-none' : ''}>
                       <div>
                         <input {...register('name')} placeholder="Full Name *" className="input" id="checkout-name" />
                         {errors.name && <p className="text-red-500 text-xs mt-0.5">{errors.name.message}</p>}
@@ -276,7 +393,20 @@ export default function CartPage() {
                           {errors.state && <p className="text-red-500 text-xs mt-0.5">{errors.state.message}</p>}
                         </div>
                       </div>
-                    </>
+                      
+                      {selectedAddressId === 'new' && (
+                        <div className="flex items-center gap-2 pt-2 pb-1">
+                          <input 
+                            type="checkbox" 
+                            id="save-address" 
+                            checked={saveAddress}
+                            onChange={(e) => setSaveAddress(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <label htmlFor="save-address" className="text-xs text-gray-600">Save this address for next time</label>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   <div className="pt-4">

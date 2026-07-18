@@ -80,6 +80,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
       orderId, amount, items, shippingAddress, userId,
       couponCode, subtotal, gst, discount,
       redirectUrl, callbackUrl, customerPhone, customerEmail,
+      paymentMethod,
     } = req.body
 
     if (!orderId || !amount || !items || !shippingAddress) {
@@ -99,9 +100,9 @@ router.post('/initiate', async (req: Request, res: Response) => {
       discount: discount || 0,
       coupon_code: couponCode || null,
       total: amount,
-      payment_status: 'pending',
+      payment_status: paymentMethod === 'cod' ? 'pending_cod' : 'pending',
       fulfilment_status: 'placed',
-      timeline: [{ status: 'placed', timestamp: new Date().toISOString(), note: 'Order placed' }],
+      timeline: [{ status: 'placed', timestamp: new Date().toISOString(), note: paymentMethod === 'cod' ? 'Order placed (Cash on Delivery)' : 'Order placed' }],
     })
 
     if (orderError) {
@@ -116,6 +117,32 @@ router.post('/initiate', async (req: Request, res: Response) => {
       if (couponError) {
         console.warn('Failed to increment coupon usage')
       }
+    }
+
+    if (paymentMethod === 'cod') {
+      // Create Shiprocket order for COD
+      createShiprocketOrder(supabaseAdmin, orderId).then(async (shiprocketRes: any) => {
+        if (shiprocketRes) {
+          const { data: currentOrder } = await supabaseAdmin.from('orders').select('timeline').eq('id', orderId).single();
+          const timeline = Array.isArray(currentOrder?.timeline) ? currentOrder.timeline : [];
+          const newTimeline = [...timeline, {
+            status: 'confirmed',
+            timestamp: new Date().toISOString(),
+            note: `COD Order automatically pushed to Shiprocket (Shipment ID: ${shiprocketRes.shipment_id})`
+          }]
+          await supabaseAdmin.from('orders').update({ timeline: newTimeline }).eq('id', orderId)
+        }
+      }).catch((err: any) => {
+        console.error('Shiprocket creation error for COD:', err);
+      });
+
+      // Redirect user directly
+      res.json({
+        success: true,
+        paymentUrl: redirectUrl, // This will go straight to the success page
+        transactionId: orderId,
+      })
+      return
     }
 
     // Get Auth Token

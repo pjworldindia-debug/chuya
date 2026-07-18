@@ -24,7 +24,7 @@ function getSupabaseAdmin() {
 router.post('/validate', async (req: Request, res: Response) => {
   const supabaseAdmin = getSupabaseAdmin()
   try {
-    const { code, subtotal } = req.body
+    const { code, subtotal, paymentMethod } = req.body
 
     if (!code || typeof subtotal !== 'number') {
       res.status(400).json({ valid: false, error: 'Code and subtotal are required' })
@@ -70,6 +70,16 @@ router.post('/validate', async (req: Request, res: Response) => {
         valid: false,
         discount: 0,
         error: `Minimum order value is ₹${coupon.min_order_value}`,
+      })
+      return
+    }
+
+    // Check prepaid only condition
+    if (coupon.is_prepaid_only && paymentMethod === 'cod') {
+      res.json({
+        valid: false,
+        discount: 0,
+        error: 'This coupon is only valid for prepaid orders',
       })
       return
     }

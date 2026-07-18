@@ -250,6 +250,7 @@ export type Database = {
           used_count: number
           expires_at: string | null
           is_active: boolean
+          is_prepaid_only: boolean
         }
         Insert: {
           id?: string
@@ -261,6 +262,7 @@ export type Database = {
           used_count?: number
           expires_at?: string | null
           is_active?: boolean
+          is_prepaid_only?: boolean
         }
         Update: {
           id?: string
@@ -272,6 +274,7 @@ export type Database = {
           used_count?: number
           expires_at?: string | null
           is_active?: boolean
+          is_prepaid_only?: boolean
         }
       }
       cart_items: {
