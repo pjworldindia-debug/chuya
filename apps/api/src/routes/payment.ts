@@ -17,24 +17,31 @@ function getSupabaseAdmin() {
   return _supabaseAdmin
 }
 
-// PhonePe V2 Credentials
-const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || '').trim()
-const PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || '').trim()
-const PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || '').trim()
-const PHONEPE_ENV = (process.env.PHONEPE_ENV || 'production').trim()
+function getPhonePeConfig() {
+  const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || '').trim()
+  const PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || '').trim()
+  const PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || '').trim()
+  const PHONEPE_ENV = (process.env.PHONEPE_ENV || 'production').trim()
+  const IS_PROD = PHONEPE_ENV === 'production'
 
-const IS_PROD = PHONEPE_ENV === 'production'
-
-const URLS = {
-  token: IS_PROD 
-    ? 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token' 
-    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token',
-  checkout: IS_PROD 
-    ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay' 
-    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay',
-  status: IS_PROD 
-    ? 'https://api.phonepe.com/apis/pg/checkout/v2/order' 
-    : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order'
+  return {
+    PHONEPE_MERCHANT_ID,
+    PHONEPE_CLIENT_ID,
+    PHONEPE_CLIENT_SECRET,
+    PHONEPE_ENV,
+    IS_PROD,
+    URLS: {
+      token: IS_PROD 
+        ? 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token' 
+        : 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token',
+      checkout: IS_PROD 
+        ? 'https://api.phonepe.com/apis/pg/checkout/v2/pay' 
+        : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay',
+      status: IS_PROD 
+        ? 'https://api.phonepe.com/apis/pg/checkout/v2/order' 
+        : 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order'
+    }
+  }
 }
 
 /**
@@ -47,6 +54,8 @@ async function getPhonePeToken() {
   if (cachedToken && Date.now() < tokenExpiry) {
     return cachedToken;
   }
+  const { PHONEPE_CLIENT_ID, PHONEPE_CLIENT_SECRET, URLS } = getPhonePeConfig()
+
   const params = new URLSearchParams()
   params.append('client_id', PHONEPE_CLIENT_ID)
   params.append('client_secret', PHONEPE_CLIENT_SECRET)
@@ -165,6 +174,8 @@ router.post('/initiate', async (req: Request, res: Response) => {
     console.log('--- PHONEPE V2 INITIATE ---')
     console.log('Payload:', payload)
 
+    const { URLS } = getPhonePeConfig()
+
     const response = await fetch(URLS.checkout, {
       method: 'POST',
       headers: {
@@ -199,6 +210,7 @@ router.post('/initiate', async (req: Request, res: Response) => {
 async function checkAndUpdateStatus(orderId: string) {
   const supabaseAdmin = getSupabaseAdmin()
   const accessToken = await getPhonePeToken()
+  const { URLS } = getPhonePeConfig()
   
   // Status endpoint: /apis/pg/checkout/v2/order/{merchantOrderId}/status
   const statusUrl = `${URLS.status}/${orderId}/status`
@@ -345,7 +357,8 @@ router.all('/redirect/:orderId', async (req: Request, res: Response) => {
 
   // Force the absolute URL, completely ignoring any frontendUrl query parameter.
   // PhonePe often mangles query parameters by appending the transaction ID to the end of the URL.
-  const fallbackBase = process.env.PHONEPE_ENV === 'production'
+  const { PHONEPE_ENV } = getPhonePeConfig()
+  const fallbackBase = PHONEPE_ENV === 'production'
     ? 'https://chuya.in'
     : (process.env.STOREFRONT_URL || 'http://localhost:3000');
   res.redirect(302, `${fallbackBase}/order-success/${orderId}`);

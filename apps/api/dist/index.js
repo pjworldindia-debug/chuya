@@ -139,22 +139,32 @@ function getSupabaseAdmin() {
   }
   return _supabaseAdmin;
 }
-var PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || "").trim();
-var PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || "").trim();
-var PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || "").trim();
-var PHONEPE_ENV = (process.env.PHONEPE_ENV || "production").trim();
-var IS_PROD = PHONEPE_ENV === "production";
-var URLS = {
-  token: IS_PROD ? "https://api.phonepe.com/apis/identity-manager/v1/oauth/token" : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token",
-  checkout: IS_PROD ? "https://api.phonepe.com/apis/pg/checkout/v2/pay" : "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay",
-  status: IS_PROD ? "https://api.phonepe.com/apis/pg/checkout/v2/order" : "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order"
-};
+function getPhonePeConfig() {
+  const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || "").trim();
+  const PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || "").trim();
+  const PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || "").trim();
+  const PHONEPE_ENV = (process.env.PHONEPE_ENV || "production").trim();
+  const IS_PROD = PHONEPE_ENV === "production";
+  return {
+    PHONEPE_MERCHANT_ID,
+    PHONEPE_CLIENT_ID,
+    PHONEPE_CLIENT_SECRET,
+    PHONEPE_ENV,
+    IS_PROD,
+    URLS: {
+      token: IS_PROD ? "https://api.phonepe.com/apis/identity-manager/v1/oauth/token" : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token",
+      checkout: IS_PROD ? "https://api.phonepe.com/apis/pg/checkout/v2/pay" : "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay",
+      status: IS_PROD ? "https://api.phonepe.com/apis/pg/checkout/v2/order" : "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order"
+    }
+  };
+}
 var cachedToken2 = null;
 var tokenExpiry = 0;
 async function getPhonePeToken() {
   if (cachedToken2 && Date.now() < tokenExpiry) {
     return cachedToken2;
   }
+  const { PHONEPE_CLIENT_ID, PHONEPE_CLIENT_SECRET, URLS } = getPhonePeConfig();
   const params = new URLSearchParams();
   params.append("client_id", PHONEPE_CLIENT_ID);
   params.append("client_secret", PHONEPE_CLIENT_SECRET);
@@ -189,7 +199,8 @@ router.post("/initiate", async (req, res) => {
       redirectUrl,
       callbackUrl,
       customerPhone,
-      customerEmail
+      customerEmail,
+      paymentMethod
     } = req.body;
     if (!orderId || !amount || !items || !shippingAddress) {
       res.status(400).json({ success: false, error: "Missing required fields" });
@@ -206,9 +217,9 @@ router.post("/initiate", async (req, res) => {
       discount: discount || 0,
       coupon_code: couponCode || null,
       total: amount,
-      payment_status: "pending",
+      payment_status: paymentMethod === "cod" ? "pending_cod" : "pending",
       fulfilment_status: "placed",
-      timeline: [{ status: "placed", timestamp: (/* @__PURE__ */ new Date()).toISOString(), note: "Order placed" }]
+      timeline: [{ status: "placed", timestamp: (/* @__PURE__ */ new Date()).toISOString(), note: paymentMethod === "cod" ? "Order placed (Cash on Delivery)" : "Order placed" }]
     });
     if (orderError) {
       console.error("Order creation error:", orderError);
@@ -220,6 +231,29 @@ router.post("/initiate", async (req, res) => {
       if (couponError) {
         console.warn("Failed to increment coupon usage");
       }
+    }
+    if (paymentMethod === "cod") {
+      createShiprocketOrder(supabaseAdmin, orderId).then(async (shiprocketRes) => {
+        if (shiprocketRes) {
+          const { data: currentOrder } = await supabaseAdmin.from("orders").select("timeline").eq("id", orderId).single();
+          const timeline = Array.isArray(currentOrder?.timeline) ? currentOrder.timeline : [];
+          const newTimeline = [...timeline, {
+            status: "confirmed",
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            note: `COD Order automatically pushed to Shiprocket (Shipment ID: ${shiprocketRes.shipment_id})`
+          }];
+          await supabaseAdmin.from("orders").update({ timeline: newTimeline }).eq("id", orderId);
+        }
+      }).catch((err) => {
+        console.error("Shiprocket creation error for COD:", err);
+      });
+      res.json({
+        success: true,
+        paymentUrl: redirectUrl,
+        // This will go straight to the success page
+        transactionId: orderId
+      });
+      return;
     }
     const accessToken = await getPhonePeToken();
     const amountInPaise = Math.round(amount * 100);
@@ -239,6 +273,7 @@ router.post("/initiate", async (req, res) => {
     };
     console.log("--- PHONEPE V2 INITIATE ---");
     console.log("Payload:", payload);
+    const { URLS } = getPhonePeConfig();
     const response = await fetch(URLS.checkout, {
       method: "POST",
       headers: {
@@ -271,6 +306,7 @@ router.post("/initiate", async (req, res) => {
 async function checkAndUpdateStatus(orderId) {
   const supabaseAdmin = getSupabaseAdmin();
   const accessToken = await getPhonePeToken();
+  const { URLS } = getPhonePeConfig();
   const statusUrl = `${URLS.status}/${orderId}/status`;
   const response = await fetch(statusUrl, {
     method: "GET",
@@ -368,7 +404,8 @@ router.all("/redirect/:orderId", async (req, res) => {
   } catch (error) {
     console.error("Redirect status check error:", error.message || error);
   }
-  const fallbackBase = process.env.PHONEPE_ENV === "production" ? "https://chuya.in" : process.env.STOREFRONT_URL || "http://localhost:3000";
+  const { PHONEPE_ENV } = getPhonePeConfig();
+  const fallbackBase = PHONEPE_ENV === "production" ? "https://chuya.in" : process.env.STOREFRONT_URL || "http://localhost:3000";
   res.redirect(302, `${fallbackBase}/order-success/${orderId}`);
 });
 
@@ -436,7 +473,7 @@ function getSupabaseAdmin2() {
 router2.post("/validate", async (req, res) => {
   const supabaseAdmin = getSupabaseAdmin2();
   try {
-    const { code, subtotal } = req.body;
+    const { code, subtotal, paymentMethod } = req.body;
     if (!code || typeof subtotal !== "number") {
       res.status(400).json({ valid: false, error: "Code and subtotal are required" });
       return;
@@ -469,6 +506,14 @@ router2.post("/validate", async (req, res) => {
       });
       return;
     }
+    if (coupon.is_prepaid_only && paymentMethod === "cod") {
+      res.json({
+        valid: false,
+        discount: 0,
+        error: "This coupon is only valid for prepaid orders"
+      });
+      return;
+    }
     let discount = 0;
     if (coupon.discount_type === "flat") {
       discount = coupon.discount_value;
@@ -493,7 +538,13 @@ import { Router as Router3 } from "express";
 import { Resend } from "resend";
 import { createClient as createClient3 } from "@supabase/supabase-js";
 var router3 = Router3();
-var resend = new Resend(process.env.RESEND_API_KEY || "");
+var resendInstance = null;
+var getResend = () => {
+  if (!resendInstance) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY || "");
+  }
+  return resendInstance;
+};
 var getSupabaseAdmin3 = () => createClient3(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
@@ -513,7 +564,7 @@ router3.post("/order-confirmation", async (req, res) => {
           </tr>`
     ).join("");
     const address = shippingAddress;
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from: "CHUYA <orders@chuya.in>",
       to: [to],
       subject: `Order Confirmed \u2014 #${orderId.slice(0, 8)}`,
@@ -570,7 +621,7 @@ router3.post("/newsletter", async (req, res) => {
     if (insertError) {
       console.warn("Subscriber insert failed (might already exist):", insertError);
     }
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from: "CHUYA <orders@chuya.in>",
       to: ["pjworldindia@gmail.com"],
       subject: "New Newsletter Subscriber",
