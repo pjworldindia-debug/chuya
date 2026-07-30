@@ -24,6 +24,10 @@ function getPhonePeConfig() {
   const PHONEPE_ENV = (process.env.PHONEPE_ENV || 'production').trim()
   const IS_PROD = PHONEPE_ENV === 'production'
 
+  if (!PHONEPE_CLIENT_ID || !PHONEPE_CLIENT_SECRET) {
+    console.error('CRITICAL: PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is missing or empty in environment variables.')
+  }
+
   return {
     PHONEPE_MERCHANT_ID,
     PHONEPE_CLIENT_ID,
