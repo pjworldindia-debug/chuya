@@ -1,7 +1,7 @@
 // src/index.ts
-import * as dotenv from "dotenv";
-import path2 from "path";
-import { fileURLToPath as fileURLToPath2 } from "url";
+import * as dotenv2 from "dotenv";
+import path3 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
 import express from "express";
 import cors from "cors";
 
@@ -128,6 +128,9 @@ async function createShiprocketOrder(supabaseAdmin, orderId) {
 }
 
 // src/routes/payment.ts
+import * as dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 var router = Router();
 var _supabaseAdmin = null;
 function getSupabaseAdmin() {
@@ -139,7 +142,20 @@ function getSupabaseAdmin() {
   }
   return _supabaseAdmin;
 }
+var _envLoaded = false;
+function ensureEnvLoaded() {
+  if (_envLoaded) return;
+  _envLoaded = true;
+  try {
+    const __fn = fileURLToPath(import.meta.url);
+    const __dn = path.dirname(__fn);
+    dotenv.config({ path: path.resolve(__dn, "../.env") });
+    dotenv.config({ path: path.resolve(__dn, "../../.env") });
+  } catch {
+  }
+}
 function getPhonePeConfig() {
+  ensureEnvLoaded();
   const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || "").trim();
   const PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || "").trim();
   const PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || "").trim();
@@ -147,6 +163,7 @@ function getPhonePeConfig() {
   const IS_PROD = PHONEPE_ENV === "production";
   if (!PHONEPE_CLIENT_ID || !PHONEPE_CLIENT_SECRET) {
     console.error("CRITICAL: PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is missing or empty in environment variables.");
+    console.error("Checked env keys:", Object.keys(process.env).filter((k) => k.startsWith("PHONEPE")));
   }
   return {
     PHONEPE_MERCHANT_ID,
@@ -796,14 +813,14 @@ router4.post("/clear-cache", (_req, res) => {
 import { Router as Router5 } from "express";
 import multer from "multer";
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import path2 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
 var router5 = Router5();
-var __filename = fileURLToPath(import.meta.url);
-var __dirname = path.dirname(__filename);
+var __filename = fileURLToPath2(import.meta.url);
+var __dirname = path2.dirname(__filename);
 var isRoutesDir = __dirname.endsWith("routes");
-var baseDir = isRoutesDir ? path.join(__dirname, "..") : __dirname;
-var uploadsDir = path.join(baseDir, "../uploads");
+var baseDir = isRoutesDir ? path2.join(__dirname, "..") : __dirname;
+var uploadsDir = path2.join(baseDir, "../uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -830,7 +847,7 @@ router5.post("/", upload.single("file"), (req, res) => {
 router5.delete("/:filename", (req, res) => {
   const filename = req.params.filename;
   if (!filename) return res.status(400).json({ error: "Filename required" });
-  const filepath = path.join(uploadsDir, filename);
+  const filepath = path2.join(uploadsDir, filename);
   if (fs.existsSync(filepath)) {
     try {
       fs.unlinkSync(filepath);
@@ -862,9 +879,9 @@ var loggerMiddleware = pinoHttp({
 // src/index.ts
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname2 = path2.dirname(__filename2);
-dotenv.config({ path: path2.resolve(__dirname2, "../.env") });
+var __filename2 = fileURLToPath3(import.meta.url);
+var __dirname2 = path3.dirname(__filename2);
+dotenv2.config({ path: path3.resolve(__dirname2, "../.env") });
 var app = express();
 app.use(loggerMiddleware);
 var PORT = process.env.PORT || 4e3;
@@ -925,7 +942,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "X-VERIFY", "Accept", "Origin", "X-Requested-With"]
 }));
 app.use(express.json({ limit: "10kb" }));
-var uploadsPath = path2.join(__dirname2, "../uploads");
+var uploadsPath = path3.join(__dirname2, "../uploads");
 app.use("/api/uploads", express.static(uploadsPath));
 app.use("/api", globalLimiter);
 app.get("/health", (_req, res) => {

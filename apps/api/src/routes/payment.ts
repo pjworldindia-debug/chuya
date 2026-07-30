@@ -3,6 +3,9 @@ import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@chuya/shared/database.types'
 import { createShiprocketOrder } from '../services/shiprocket'
+import * as dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 const router = Router()
 
@@ -17,7 +20,27 @@ function getSupabaseAdmin() {
   return _supabaseAdmin
 }
 
+// Ensure .env is loaded before reading PhonePe config.
+// This is a failsafe in case the main dotenv.config() in index.ts
+// hasn't executed yet due to ESM bundling order.
+let _envLoaded = false
+function ensureEnvLoaded() {
+  if (_envLoaded) return
+  _envLoaded = true
+  try {
+    const __fn = fileURLToPath(import.meta.url)
+    const __dn = path.dirname(__fn)
+    // Try loading from api root (when running from src/) and from one level up (when running from dist/)
+    dotenv.config({ path: path.resolve(__dn, '../.env') })
+    dotenv.config({ path: path.resolve(__dn, '../../.env') })
+  } catch {
+    // silently ignore — dotenv may already be loaded from index.ts
+  }
+}
+
 function getPhonePeConfig() {
+  ensureEnvLoaded()
+
   const PHONEPE_MERCHANT_ID = (process.env.PHONEPE_MERCHANT_ID || '').trim()
   const PHONEPE_CLIENT_ID = (process.env.PHONEPE_CLIENT_ID || '').trim()
   const PHONEPE_CLIENT_SECRET = (process.env.PHONEPE_CLIENT_SECRET || '').trim()
@@ -26,6 +49,7 @@ function getPhonePeConfig() {
 
   if (!PHONEPE_CLIENT_ID || !PHONEPE_CLIENT_SECRET) {
     console.error('CRITICAL: PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is missing or empty in environment variables.')
+    console.error('Checked env keys:', Object.keys(process.env).filter(k => k.startsWith('PHONEPE')))
   }
 
   return {
